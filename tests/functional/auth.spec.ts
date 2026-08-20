@@ -10,6 +10,9 @@ test.group('API authentication', (group) => {
     client,
     assert,
   }) => {
+    const unauthorized = await client.get('/api/v1/account/profile').send()
+    unauthorized.assertStatus(401)
+
     const email = `auth-${Date.now()}@example.com`
     const signup = await client
       .post('/api/v1/signup')

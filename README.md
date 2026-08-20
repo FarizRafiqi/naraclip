@@ -42,8 +42,12 @@ Requirements: Node.js 24.x, npm 11.x, pnpm 10.x. PostgreSQL hanya diperlukan jik
 pnpm install
 cp .env.example .env
 node ace migration:run
+node ace db:seed
 pnpm dev
 ```
+
+Development seed creates `demo@naraclip.local` as admin and one demo project. Set
+`DEFAULT_USER_PASSWORD` before seeding to override its development password.
 
 Untuk smoke test tanpa PostgreSQL, ubah `DB_CONNECTION=sqlite` lalu jalankan:
 
