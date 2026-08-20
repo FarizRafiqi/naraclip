@@ -43,6 +43,8 @@ router
       .prefix('account')
       .use(middleware.apiAuth())
 
+    router.get('projects/:id', [controllers.Projects, 'show']).use(middleware.apiAuth())
+
     router
       .group(() => {
         router.get('ping', ({ auth }) => ({

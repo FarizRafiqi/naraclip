@@ -1,5 +1,7 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
+import Project from '#models/project'
+import User from '#models/user'
 
 test.group('API authentication', (group) => {
   group.setup(async () => {
@@ -43,5 +45,39 @@ test.group('API authentication', (group) => {
     const admin = await client.get('/api/v1/admin/ping').bearerToken(signupBody.data.token).send()
     admin.assertStatus(403)
     admin.assertBody({ error: 'forbidden', message: 'Admin role required' })
+
+    const owner = await User.findByOrFail('email', email)
+    const project = await Project.create({
+      ownerId: owner.id,
+      title: 'Private project',
+      sourcePrompt: 'Private prompt',
+      status: 'draft',
+    })
+
+    const ownerProject = await client
+      .get(`/api/v1/projects/${project.id}`)
+      .bearerToken(signupBody.data.token)
+      .send()
+    ownerProject.assertStatus(200)
+    ownerProject.assertBodyContains({ data: { id: project.id, title: 'Private project' } })
+
+    const otherSignup = await client
+      .post('/api/v1/signup')
+      .json({
+        fullName: 'Other User',
+        email: `other-${Date.now()}@example.com`,
+        password: 'secret123',
+        passwordConfirmation: 'secret123',
+      })
+      .send()
+    otherSignup.assertStatus(200)
+
+    const otherToken = (otherSignup.body() as { data: { token: string } }).data.token
+    const forbiddenProject = await client
+      .get(`/api/v1/projects/${project.id}`)
+      .bearerToken(otherToken)
+      .send()
+    forbiddenProject.assertStatus(404)
+    forbiddenProject.assertBody({ error: 'not_found', message: 'Project not found' })
   })
 })

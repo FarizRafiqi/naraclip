@@ -8,5 +8,6 @@ export const controllers = {
   ApiNewAccount: () => import('#controllers/api_new_account_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
+  Projects: () => import('#controllers/projects_controller'),
   Session: () => import('#controllers/session_controller'),
 }

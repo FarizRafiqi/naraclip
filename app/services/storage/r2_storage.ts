@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -32,10 +33,25 @@ type R2StorageOptions = {
 }
 
 const SAFE_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+const SUPPORTED_MIME_TYPE =
+  /^(?:image\/[A-Za-z0-9.+-]+|audio\/[A-Za-z0-9.+-]+|video\/(?:mp4|webm))$/i
+const SHA256_HEX = /^[A-Fa-f0-9]{64}$/
 
 function assertSafeKeySegment(value: string, name: string) {
   if (!SAFE_KEY_SEGMENT.test(value) || value === '.' || value === '..') {
     throw new Error(`${name} contains an unsafe storage key segment`)
+  }
+}
+
+function assertSafeStorageKey(key: string) {
+  if (!key || key.split('/').some((segment) => !SAFE_KEY_SEGMENT.test(segment))) {
+    throw new Error('key contains an unsafe storage path')
+  }
+}
+
+function assertSupportedMimeType(contentType: string) {
+  if (!SUPPORTED_MIME_TYPE.test(contentType)) {
+    throw new Error(`Unsupported storage MIME type: ${contentType}`)
   }
 }
 
@@ -86,6 +102,12 @@ export default class R2Storage {
 
   async upload(input: R2UploadInput) {
     this.assertConfigured()
+    assertSafeStorageKey(input.key)
+    assertSupportedMimeType(input.contentType)
+
+    if (input.checksumSha256 && !SHA256_HEX.test(input.checksumSha256)) {
+      throw new Error('checksumSha256 must be a 64-character hexadecimal SHA-256 digest')
+    }
 
     await this.client.send(
       new PutObjectCommand({
@@ -111,14 +133,38 @@ export default class R2Storage {
 
   async createDownloadUrl(key: string, expiresIn = this.signedUrlTtlSeconds) {
     this.assertConfigured()
+    assertSafeStorageKey(key)
 
     return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
       expiresIn,
     })
   }
 
+  async createUploadUrl(input: {
+    key: string
+    contentType: string
+    byteSize?: number
+    expiresIn?: number
+  }) {
+    this.assertConfigured()
+    assertSafeStorageKey(input.key)
+    assertSupportedMimeType(input.contentType)
+
+    return getSignedUrl(
+      this.client,
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: input.key,
+        ContentType: input.contentType,
+        ContentLength: input.byteSize,
+      }),
+      { expiresIn: input.expiresIn ?? this.signedUrlTtlSeconds }
+    )
+  }
+
   async head(key: string): Promise<R2AssetHead> {
     this.assertConfigured()
+    assertSafeStorageKey(key)
 
     const result = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }))
 
@@ -129,6 +175,15 @@ export default class R2Storage {
       etag: result.ETag,
       metadata: result.Metadata ?? {},
     }
+  }
+
+  async delete(key: string) {
+    this.assertConfigured()
+    assertSafeStorageKey(key)
+
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
+
+    return { key }
   }
 
   private assertConfigured() {
