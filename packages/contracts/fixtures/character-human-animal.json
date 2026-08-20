@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "scene-character-001",
+  "index": 0,
+  "archetype": "CHARACTER_HUMAN_ANIMAL",
+  "title": "The tiny habit that wins attention",
+  "narration": "Small actions become visible when the story gives them a character and a clear beat.",
+  "durationMs": 6000,
+  "visualAssets": [
+    {
+      "id": "asset-character-001",
+      "kind": "image",
+      "source": "generated",
+      "storageKey": "fixtures/character-human-animal/asset-character-001.png",
+      "mimeType": "image/png",
+      "altText": "Friendly illustrated character holding a small note"
+    }
+  ],
+  "captionCues": [
+    { "text": "SMALL ACTIONS", "startMs": 800, "endMs": 2200, "emphasis": "keyword" },
+    { "text": "become visible", "startMs": 2400, "endMs": 4200, "emphasis": "normal" }
+  ],
+  "motion": ["scale", "highlight", "slide"],
+  "audioTracks": [
+    { "id": "voice-character-001", "kind": "voice", "assetId": "audio-character-001", "startMs": 0, "durationMs": 6000, "volume": 1 }
+  ],
+  "rendererHints": { "template": "character-reveal", "safeArea": "default", "background": "#0B1020" }
+}
