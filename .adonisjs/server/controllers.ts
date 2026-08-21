@@ -6,6 +6,7 @@
 export const controllers = {
   AccessTokens: () => import('#controllers/access_tokens_controller'),
   ApiNewAccount: () => import('#controllers/api_new_account_controller'),
+  Jobs: () => import('#controllers/jobs_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
   Projects: () => import('#controllers/projects_controller'),

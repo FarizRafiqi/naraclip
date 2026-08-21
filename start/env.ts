@@ -43,6 +43,10 @@ export default await Env.create(new URL('../', import.meta.url), {
   R2_SECRET_ACCESS_KEY: Env.schema.secret.optional(),
   R2_SIGNED_URL_TTL_SECONDS: Env.schema.number.optional(),
 
+  // Queue
+  REDIS_URL: Env.schema.string.optional(),
+  QUEUE_PREFIX: Env.schema.string.optional(),
+
   // HTTP
   CORS_ORIGIN: Env.schema.string.optional(),
 })

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { SceneSpecSchema, StoryBriefSchema } from '../src/index.js'
+import { ProviderConfigSnapshotSchema, SceneSpecSchema, StoryBriefSchema } from '../src/index.js'
 
 const fixtureNames = [
   'character-human-animal.json',
@@ -45,5 +45,18 @@ describe('SceneSpec contract fixtures', () => {
     })
 
     expect(brief.scenes).toHaveLength(1)
+  })
+
+  it('applies safe defaults to provider snapshots and caption style', () => {
+    const snapshot = ProviderConfigSnapshotSchema.parse({
+      schemaVersion: 1,
+      providerId: 'local',
+      capability: 'story',
+      model: 'template-v1',
+      config: {},
+    })
+
+    expect(snapshot.flags).toEqual({})
+    expect(snapshot.costMinorPerUnit).toBe(0)
   })
 })

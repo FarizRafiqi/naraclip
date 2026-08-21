@@ -14,6 +14,14 @@ export const SceneArchetypeSchema = z.enum([
 export const VisualAssetKindSchema = z.enum(['image', 'icon', 'map', 'chart', 'shape', 'ui'])
 export const AssetSourceSchema = z.enum(['generated', 'uploaded', 'stock', 'inline'])
 export const CaptionEmphasisSchema = z.enum(['normal', 'keyword', 'warning', 'number'])
+export const CaptionStyleSchema = z
+  .object({
+    preset: z.enum(['bold-karaoke', 'clean', 'minimal']),
+    safeArea: z.enum(['default', 'tight', 'wide']),
+    maxLines: z.number().int().min(1).max(3),
+    position: z.enum(['top', 'center', 'bottom']),
+  })
+  .strict()
 export const MotionPrimitiveSchema = z.enum([
   'fade',
   'slide',
@@ -74,6 +82,12 @@ export const SceneSpecSchema = z
     durationMs: z.number().int().min(1000).max(120000),
     visualAssets: z.array(AssetRefSchema).min(1).max(32),
     captionCues: z.array(CaptionCueSchema).max(200),
+    captionStyle: CaptionStyleSchema.default({
+      preset: 'bold-karaoke',
+      safeArea: 'default',
+      maxLines: 2,
+      position: 'bottom',
+    }),
     motion: z.array(MotionPrimitiveSchema).min(1).max(12),
     audioTracks: z.array(AudioTrackSchema).max(16),
     rendererHints: z
@@ -122,6 +136,9 @@ export const ProviderConfigSnapshotSchema = z
     model: NonEmptyText.max(160),
     config: z.record(z.string(), z.unknown()),
     promptVersion: NonEmptyText.max(100).optional(),
+    fallbackProviderId: NonEmptyText.max(100).optional(),
+    flags: z.record(z.string(), z.unknown()).default({}),
+    costMinorPerUnit: z.number().int().nonnegative().default(0),
   })
   .strict()
 
@@ -140,12 +157,14 @@ export type SceneArchetype = z.infer<typeof SceneArchetypeSchema>
 export type VisualAssetKind = z.infer<typeof VisualAssetKindSchema>
 export type AssetRef = z.infer<typeof AssetRefSchema>
 export type CaptionCue = z.infer<typeof CaptionCueSchema>
+export type CaptionStyle = z.infer<typeof CaptionStyleSchema>
 export type AudioTrack = z.infer<typeof AudioTrackSchema>
 export type SceneSpec = z.infer<typeof SceneSpecSchema>
 export type StoryBrief = z.infer<typeof StoryBriefSchema>
 export type RenderSpec = z.infer<typeof RenderSpecSchema>
 export type ProviderConfigSnapshot = z.infer<typeof ProviderConfigSnapshotSchema>
 export type ProviderContract = z.infer<typeof ProviderContractSchema>
+export type ProviderCapability = z.infer<typeof ProviderCapabilitySchema>
 
 export function parseSceneSpec(input: unknown): SceneSpec {
   return SceneSpecSchema.parse(input)
@@ -157,4 +176,8 @@ export function parseStoryBrief(input: unknown): StoryBrief {
 
 export function parseRenderSpec(input: unknown): RenderSpec {
   return RenderSpecSchema.parse(input)
+}
+
+export function parseProviderConfigSnapshot(input: unknown): ProviderConfigSnapshot {
+  return ProviderConfigSnapshotSchema.parse(input)
 }

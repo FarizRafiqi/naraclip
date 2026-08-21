@@ -47,6 +47,13 @@ router
 
     router
       .group(() => {
+        router.post('videos/:videoId/jobs', [controllers.Jobs, 'store'])
+        router.get('jobs/:id', [controllers.Jobs, 'show'])
+      })
+      .use(middleware.apiAuth())
+
+    router
+      .group(() => {
         router.get('ping', ({ auth }) => ({
           role: auth.getUserOrFail().role,
         }))

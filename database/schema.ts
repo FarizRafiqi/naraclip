@@ -119,6 +119,48 @@ export class ProjectSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class ProviderConfigSchema extends BaseModel {
+  static $columns = ['capability', 'config', 'costMinorPerUnit', 'createdAt', 'enabled', 'id', 'model', 'promptVersion', 'providerId', 'updatedAt'] as const
+  $columns = ProviderConfigSchema.$columns
+  @column()
+  declare capability: string
+  @column()
+  declare config: any
+  @column()
+  declare costMinorPerUnit: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare model: string
+  @column()
+  declare promptVersion: string | null
+  @column()
+  declare providerId: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class ProviderRouteSchema extends BaseModel {
+  static $columns = ['capability', 'createdAt', 'fallbackConfigId', 'id', 'primaryConfigId', 'updatedAt'] as const
+  $columns = ProviderRouteSchema.$columns
+  @column()
+  declare capability: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare fallbackConfigId: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare primaryConfigId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class RenderJobSchema extends BaseModel {
   static $columns = ['attemptCount', 'completedAt', 'createdAt', 'errorCode', 'errorMessage', 'id', 'idempotencyKey', 'quality', 'renderSpecSnapshot', 'resultAssetId', 'startedAt', 'status', 'updatedAt', 'videoId'] as const
   $columns = RenderJobSchema.$columns
