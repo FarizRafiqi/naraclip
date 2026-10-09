@@ -51,16 +51,16 @@ terpisah karena bertanggung jawab atas komposisi dan rendering video.
 
 ## Tech stack
 
-| Area              | Technology                                              |
-| ----------------- | ------------------------------------------------------- |
-| Application       | AdonisJS 7.4, Lucid 22, VineJS                          |
-| Frontend          | Inertia React, React 19, Vite 8                         |
-| UI                | Tailwind CSS 4, Framer Motion                           |
-| Database          | PostgreSQL for production, SQLite for local smoke tests |
-| Object storage    | MinIO (self-hosted, S3-compatible) through the S3 SDK   |
+| Area              | Technology                                               |
+| ----------------- | -------------------------------------------------------- |
+| Application       | AdonisJS 7.4, Lucid 22, VineJS                           |
+| Frontend          | Inertia React, React 19, Vite 8                          |
+| UI                | Tailwind CSS 4, Framer Motion                            |
+| Database          | PostgreSQL for production, SQLite for local smoke tests  |
+| Object storage    | MinIO (self-hosted, S3-compatible) through the S3 SDK    |
 | Image generation  | ComfyUI (local), 9Router/OpenAI-compatible, SVG fallback |
-| Video composition | HyperFrames 0.8.4                                       |
-| Workspace         | pnpm 10 with `renderer/` and `packages/contracts/`      |
+| Video composition | HyperFrames 0.8.4                                        |
+| Workspace         | pnpm 10 with `renderer/` and `packages/contracts/`       |
 
 ## Project structure
 
@@ -110,12 +110,12 @@ idempotent and can be run repeatedly during development.
 
 `docker-compose.yml` brings up the app together with its dependencies:
 
-| Service    | Purpose                                | Port               |
-| ---------- | -------------------------------------- | ------------------ |
-| `app`      | NaraClip (production Dockerfile)       | 3333               |
-| `postgres` | PostgreSQL 17                          | 5432               |
-| `redis`    | Job queue                              | 6379               |
-| `minio`    | S3-compatible object storage + console | 9000 (API), 9001   |
+| Service    | Purpose                                | Port             |
+| ---------- | -------------------------------------- | ---------------- |
+| `app`      | NaraClip (production Dockerfile)       | 3333             |
+| `postgres` | PostgreSQL 17                          | 5432             |
+| `redis`    | Job queue                              | 6379             |
+| `minio`    | S3-compatible object storage + console | 9000 (API), 9001 |
 
 ```bash
 cp .env.example .env
@@ -152,29 +152,29 @@ Follow the [video production playbook](docs/video-production-playbook.md) when c
 
 ## Useful commands
 
-| Command               | Purpose                                  |
-| --------------------- | ---------------------------------------- |
-| `pnpm dev`            | Start MinIO (if needed), AdonisJS, and the HyperFrames Studio |
-| `pnpm dev:app`        | Start only AdonisJS with hot reload      |
+| Command               | Purpose                                                                       |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `pnpm dev`            | Start MinIO (if needed), AdonisJS, and the HyperFrames Studio                 |
+| `pnpm dev:app`        | Start only AdonisJS with hot reload                                           |
 | `pnpm migrate`        | Run database migrations (`migrate:rollback`, `migrate:status` also available) |
-| `pnpm dev:renderer`   | Start the HyperFrames renderer workspace |
-| `pnpm build`          | Build the production application         |
-| `pnpm typecheck`      | Check backend and Inertia TypeScript     |
-| `pnpm test`           | Run AdonisJS unit and functional tests   |
-| `pnpm test:contracts` | Run shared contract tests                |
-| `pnpm lint`           | Run ESLint                               |
-| `pnpm check`          | Run the complete local quality gate      |
+| `pnpm dev:renderer`   | Start the HyperFrames renderer workspace                                      |
+| `pnpm build`          | Build the production application                                              |
+| `pnpm typecheck`      | Check backend and Inertia TypeScript                                          |
+| `pnpm test`           | Run AdonisJS unit and functional tests                                        |
+| `pnpm test:contracts` | Run shared contract tests                                                     |
+| `pnpm lint`           | Run ESLint                                                                    |
+| `pnpm check`          | Run the complete local quality gate                                           |
 
 ## Image providers
 
 Image generation goes through `resolveImageProvider()` and the `provider_configs` / `provider_routes`
 tables, so the active provider can change without touching the pipeline. The seeders register:
 
-| Provider ID   | Backend                                                         | Configuration                                  |
-| ------------- | --------------------------------------------------------------- | ---------------------------------------------- |
-| `svg-local`   | Deterministic SVG placeholder (default route, no dependencies)  | none                                           |
-| `comfyui`     | Local ComfyUI API                                               | `COMFYUI_ENDPOINT`                             |
-| `9router`     | OpenAI-compatible `/images/generations` gateway                 | `NINEROUTER_ENDPOINT`, `NINEROUTER_API_KEY`    |
+| Provider ID | Backend                                                        | Configuration                               |
+| ----------- | -------------------------------------------------------------- | ------------------------------------------- |
+| `svg-local` | Deterministic SVG placeholder (default route, no dependencies) | none                                        |
+| `comfyui`   | Local ComfyUI API                                              | `COMFYUI_ENDPOINT`                          |
+| `9router`   | OpenAI-compatible `/images/generations` gateway                | `NINEROUTER_ENDPOINT`, `NINEROUTER_API_KEY` |
 
 Point a capability's primary route at `comfyui` or `9router` to use them. Secrets stay on the server.
 
