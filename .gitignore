@@ -2,28 +2,116 @@
 node_modules/
 .pnpm-store/
 
-# Build output
+# Build & Bundler Output
 build/
 dist/
 public/assets/
 .next/
 out/
+.turbo/
+.parcel-cache/
+.eslintcache/
 
-# Local environment
+# Local Environment & Secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.cert
 
-# Runtime data
-tmp/*.sqlite*
+# Runtime Data & Databases
+tmp/*
+!tmp/.gitkeep
+database/*.sqlite*
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sqlite-journal
 coverage/
 
-# Tooling
-.turbo/
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# Video Production & Render Artifacts (Exports, Snapshots, Large Media Outputs)
+*.mp4
+*.mov
+*.avi
+*.webm
+*.mkv
+
+# Video Content Workspaces (Self-contained local video projects)
+# Aturan: Semua aset (visual, audio), data timing, skrip build/mix khusus konten,
+# serta hasil render disimpan lokal di dalam renderer/content/<slug>/ dan TIDAK di-push ke git.
+renderer/content/*
+!renderer/content/.gitkeep
+public/content/*
+!public/content/.gitkeep
+
+# Media Binaries (Images, Audio, Cutouts)
+renderer/**/*.png
+renderer/**/*.jpg
+renderer/**/*.jpeg
+renderer/**/*.webp
+renderer/**/*.gif
+renderer/**/*.wav
+renderer/**/*.mp3
+renderer/**/*.m4a
+renderer/**/*.ogg
+renderer/**/*.flac
+renderer/**/*.aac
+
+# Renderer Dynamic Aliases & Output Links
+renderer/scripts
+renderer/snapshots
+renderer/*.mp4
+renderer/output_*.mp4
+renderer/assets/*
+!renderer/assets/fonts/
+!renderer/assets/fonts/**
+!renderer/assets/vendor/
+!renderer/assets/vendor/**
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# Framework Tooling (AdonisJS)
 .adonisjs/*
 !.adonisjs/
 !.adonisjs/client/
 !.adonisjs/client/**
 !.adonisjs/server/
 !.adonisjs/server/**
+
+# OS & Editor Files
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# AI Assistant Local Caches & Session Data
+.claude/*
+!.claude/CLAUDE.md
+.claude.json
