@@ -57,7 +57,8 @@ terpisah karena bertanggung jawab atas komposisi dan rendering video.
 | Frontend          | Inertia React, React 19, Vite 8                         |
 | UI                | Tailwind CSS 4, Framer Motion                           |
 | Database          | PostgreSQL for production, SQLite for local smoke tests |
-| Object storage    | Cloudflare R2 through the S3 SDK                        |
+| Object storage    | MinIO (self-hosted, S3-compatible) through the S3 SDK   |
+| Image generation  | ComfyUI (local), 9Router/OpenAI-compatible, SVG fallback |
 | Video composition | HyperFrames 0.8.4                                       |
 | Workspace         | pnpm 10 with `renderer/` and `packages/contracts/`      |
 
@@ -82,6 +83,7 @@ tests/               Japa functional/unit tests and contract fixtures
 - npm 11.x
 - pnpm 10.x
 - PostgreSQL when using `DB_CONNECTION=pg`
+- Docker (optional) for the bundled PostgreSQL, Redis, and MinIO services
 
 ## Getting started
 
@@ -102,6 +104,30 @@ Password: password
 
 Set `DEFAULT_USER_PASSWORD` before seeding to use a different local password. The seeders are
 idempotent and can be run repeatedly during development.
+
+### Run with Docker Compose
+
+`docker-compose.yml` brings up the app together with its dependencies:
+
+| Service    | Purpose                                | Port               |
+| ---------- | -------------------------------------- | ------------------ |
+| `app`      | NaraClip (production Dockerfile)       | 3333               |
+| `postgres` | PostgreSQL 17                          | 5432               |
+| `redis`    | Job queue                              | 6379               |
+| `minio`    | S3-compatible object storage + console | 9000 (API), 9001   |
+
+```bash
+cp .env.example .env
+node ace generate:key   # copy the printed APP_KEY into .env
+docker compose up -d
+```
+
+The `MINIO_*` values in `.env.example` are development defaults. Change the access and secret keys
+before exposing MinIO outside your machine.
+
+`pnpm dev` also starts the `minio` service on demand (when Docker is available), then launches the
+app on <http://localhost:3333> and the HyperFrames Studio on <http://localhost:3002>. Use
+`pnpm dev:app` to run only the AdonisJS app.
 
 ### Run with SQLite
 
@@ -125,7 +151,9 @@ pnpm dev:renderer
 
 | Command               | Purpose                                  |
 | --------------------- | ---------------------------------------- |
-| `pnpm dev`            | Start AdonisJS with hot reload           |
+| `pnpm dev`            | Start MinIO (if needed), AdonisJS, and the HyperFrames Studio |
+| `pnpm dev:app`        | Start only AdonisJS with hot reload      |
+| `pnpm migrate`        | Run database migrations (`migrate:rollback`, `migrate:status` also available) |
 | `pnpm dev:renderer`   | Start the HyperFrames renderer workspace |
 | `pnpm build`          | Build the production application         |
 | `pnpm typecheck`      | Check backend and Inertia TypeScript     |
@@ -134,13 +162,26 @@ pnpm dev:renderer
 | `pnpm lint`           | Run ESLint                               |
 | `pnpm check`          | Run the complete local quality gate      |
 
+## Image providers
+
+Image generation goes through `resolveImageProvider()` and the `provider_configs` / `provider_routes`
+tables, so the active provider can change without touching the pipeline. The seeders register:
+
+| Provider ID   | Backend                                                         | Configuration                                  |
+| ------------- | --------------------------------------------------------------- | ---------------------------------------------- |
+| `svg-local`   | Deterministic SVG placeholder (default route, no dependencies)  | none                                           |
+| `comfyui`     | Local ComfyUI API                                               | `COMFYUI_ENDPOINT`                             |
+| `9router`     | OpenAI-compatible `/images/generations` gateway                 | `NINEROUTER_ENDPOINT`, `NINEROUTER_API_KEY`    |
+
+Point a capability's primary route at `comfyui` or `9router` to use them. Secrets stay on the server.
+
 ## Data and security foundations
 
 - Relational data is split into normalized tables with foreign keys, constraints, and operational
   indexes.
 - JSONB is reserved for immutable provider/config snapshots and asset metadata.
 - Project reads are scoped to the authenticated owner.
-- R2 objects use safe scoped keys and private-bucket access through signed URLs.
+- MinIO objects use safe scoped keys and private-bucket access through signed URLs.
 - Provider secrets are loaded from environment variables and are never sent to the frontend.
 
 See the [database normalization notes](docs/database-normalization.md) for the schema decisions.
