@@ -14,18 +14,25 @@ export type ScannedRoutes = {
     'access_tokens.store': { paramsTuple?: []; params?: {} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'projects.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'jobs.store': { paramsTuple: [ParamValue]; params: {'videoId': ParamValue} }
+    'jobs.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   GET: {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'profile.show': { paramsTuple?: []; params?: {} }
+    'projects.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'jobs.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   HEAD: {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'profile.show': { paramsTuple?: []; params?: {} }
+    'projects.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'jobs.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   POST: {
     'new_account.store': { paramsTuple?: []; params?: {} }
@@ -34,6 +41,7 @@ export type ScannedRoutes = {
     'api_new_account.store': { paramsTuple?: []; params?: {} }
     'access_tokens.store': { paramsTuple?: []; params?: {} }
     'access_tokens.destroy': { paramsTuple?: []; params?: {} }
+    'jobs.store': { paramsTuple: [ParamValue]; params: {'videoId': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {
