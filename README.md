@@ -150,6 +150,39 @@ pnpm dev:renderer
 
 Follow the [video production playbook](docs/video-production-playbook.md) when creating or revising video content.
 
+## Video production workflow
+
+Each video is a self-contained, local workspace in `renderer/content/<slug>/` (git-ignored: scripts, data,
+images, audio, previews, exports). Only shared tooling is tracked: fonts and GSAP in `renderer/assets/`,
+and the helpers in `renderer/tools/`.
+
+```bash
+# 1. scaffold a workspace
+node renderer/tools/new-content.mjs <slug> "<title>"
+
+# 2. point renderer/index.html at it while working (local alias, never commit)
+pnpm activate <slug>
+
+# 3. optional: generate the images listed in content/<slug>/data/image-jobs.json
+uv run --python 3.13 python renderer/tools/imagegen/imagegen.py pack <slug>        # prompts to paste by hand
+uv run --python 3.13 --with gemini_webapi python renderer/tools/imagegen/imagegen.py generate <slug>
+
+# 4. when the video is final: keep only the render, pack the rest, restore later if needed
+node renderer/tools/archive-content.mjs <slug> [--prune]
+node renderer/tools/restore-content.mjs <slug>
+```
+
+- `archive-content` copies the final MP4 and subtitles to `<shorts-dir>/05_export`, packs everything
+  that cannot be rebuilt into a checksummed `tar.xz`, and only deletes rebuildable folders (previews,
+  processed media, old exports) with `--prune`.
+- `imagegen.py generate` uses the unofficial [gemini_webapi](https://github.com/HanaokaYuzu/Gemini-API)
+  client with browser cookies in `~/.config/naraclip/gemini.env`. It can break when Google changes the web
+  app and may conflict with Google's terms, so it is opt-in, capped at 30 images/day, and `pack` stays
+  available as the manual fallback. See [the plan](docs/plan-hemat-token-auto-image.md) for the risks and
+  the fallback chain.
+- Content planning lives in [docs/ide-konten-niche-vinconium.md](docs/ide-konten-niche-vinconium.md) and
+  [docs/konten-pedas-capsaicin-spec.md](docs/konten-pedas-capsaicin-spec.md).
+
 ## Useful commands
 
 | Command               | Purpose                                                                       |
@@ -158,6 +191,7 @@ Follow the [video production playbook](docs/video-production-playbook.md) when c
 | `pnpm dev:app`        | Start only AdonisJS with hot reload                                           |
 | `pnpm migrate`        | Run database migrations (`migrate:rollback`, `migrate:status` also available) |
 | `pnpm dev:renderer`   | Start the HyperFrames renderer workspace                                      |
+| `pnpm activate`       | Point `renderer/index.html` at a video workspace                              |
 | `pnpm build`          | Build the production application                                              |
 | `pnpm typecheck`      | Check backend and Inertia TypeScript                                          |
 | `pnpm test`           | Run AdonisJS unit and functional tests                                        |
