@@ -22,8 +22,22 @@
   ],
   "motion": ["pan", "parallax", "highlight"],
   "audioTracks": [
-    { "id": "voice-geography-001", "kind": "voice", "assetId": "audio-geography-001", "startMs": 0, "durationMs": 7000, "volume": 1 },
-    { "id": "sfx-geography-001", "kind": "sfx", "assetId": "sfx-map-ping", "startMs": 3000, "durationMs": 500, "volume": 0.35 }
+    {
+      "id": "voice-geography-001",
+      "kind": "voice",
+      "assetId": "audio-geography-001",
+      "startMs": 0,
+      "durationMs": 7000,
+      "volume": 1
+    },
+    {
+      "id": "sfx-geography-001",
+      "kind": "sfx",
+      "assetId": "sfx-map-ping",
+      "startMs": 3000,
+      "durationMs": 500,
+      "volume": 0.35
+    }
   ],
   "rendererHints": { "template": "gis-layer-reveal", "safeArea": "wide", "background": "#0B1020" }
 }

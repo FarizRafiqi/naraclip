@@ -22,7 +22,18 @@
   ],
   "motion": ["scale", "highlight", "slide"],
   "audioTracks": [
-    { "id": "voice-character-001", "kind": "voice", "assetId": "audio-character-001", "startMs": 0, "durationMs": 6000, "volume": 1 }
+    {
+      "id": "voice-character-001",
+      "kind": "voice",
+      "assetId": "audio-character-001",
+      "startMs": 0,
+      "durationMs": 6000,
+      "volume": 1
+    }
   ],
-  "rendererHints": { "template": "character-reveal", "safeArea": "default", "background": "#0B1020" }
+  "rendererHints": {
+    "template": "character-reveal",
+    "safeArea": "default",
+    "background": "#0B1020"
+  }
 }

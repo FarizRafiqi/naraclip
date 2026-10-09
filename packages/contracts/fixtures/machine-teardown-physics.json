@@ -22,8 +22,26 @@
   ],
   "motion": ["scale", "orbit", "slide", "highlight"],
   "audioTracks": [
-    { "id": "voice-machine-001", "kind": "voice", "assetId": "audio-machine-001", "startMs": 0, "durationMs": 6500, "volume": 1 },
-    { "id": "sfx-machine-001", "kind": "sfx", "assetId": "sfx-mechanical-click", "startMs": 1900, "durationMs": 450, "volume": 0.4 }
+    {
+      "id": "voice-machine-001",
+      "kind": "voice",
+      "assetId": "audio-machine-001",
+      "startMs": 0,
+      "durationMs": 6500,
+      "volume": 1
+    },
+    {
+      "id": "sfx-machine-001",
+      "kind": "sfx",
+      "assetId": "sfx-mechanical-click",
+      "startMs": 1900,
+      "durationMs": 450,
+      "volume": 0.4
+    }
   ],
-  "rendererHints": { "template": "mechanical-explode", "safeArea": "tight", "background": "#0B1020" }
+  "rendererHints": {
+    "template": "mechanical-explode",
+    "safeArea": "tight",
+    "background": "#0B1020"
+  }
 }
