@@ -16,6 +16,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:app": "node ace serve --hmr",
     "dev:renderer": "pnpm --filter @naraclip/renderer dev",
+    "activate": "node renderer/tools/activate.mjs",
     "migrate": "node ace migration:run",
     "migrate:rollback": "node ace migration:rollback",
     "migrate:status": "node ace migration:status",
