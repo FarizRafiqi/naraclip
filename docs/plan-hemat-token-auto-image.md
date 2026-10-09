@@ -1,126 +1,141 @@
 # Plan: NaraClip lebih hemat token + generate gambar otomatis tanpa biaya bulanan tambahan
 
-Status: draft untuk disetujui. Tanggal: 2026-10-09.
+Status: diperbarui 2026-10-09 setelah keputusan "jalur utama = web Gemini via `gemini_webapi`".
+
+## 0. Status pekerjaan
+
+| Bagian                                                                                       | Status                                                                                                     |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `renderer/tools/imagegen/imagegen.py` — `generate` (gemini_webapi), `pack` (manual), `check` | Ditulis. `pack` dan `generate --dry-run` diuji; **`generate` belum pernah dijalankan dengan cookie asli**. |
+| `renderer/tools/archive-content.mjs` + `restore-content.mjs`                                 | Ditulis dan diuji pada pedas-capsaicin (arsip + restore + checksum). Belum dijalankan dengan `--prune`.    |
+| `image-jobs.json` pedas-capsaicin (16 job)                                                   | Ada, sebagai catatan prompt yang sudah dipakai.                                                            |
+| Backend cadangan #2–#4 (port TypeScript, Playwright)                                         | **Belum dibuat.** Satu-satunya cadangan yang ada sekarang: `pack` manual.                                  |
+| Kit bersama, `measure.py`, `qa.mjs` (hemat token)                                            | **Belum dibuat.**                                                                                          |
+| ComfyUI                                                                                      | Provider ada di kode aplikasi dan dites, tapi **belum dipasang atau dicoba** di mesin ini.                 |
+| Provider `gemini_webapi` di aplikasi NaraClip                                                | **Tidak ada, dan tidak direncanakan** (lihat bagian 2).                                                    |
 
 ## 1. Fakta yang membatasi desain (sudah dicek)
 
-| Fakta | Dampak |
-|---|---|
-| Langganan **Google AI Pro** memberi kuota Nano Banana di **aplikasi Gemini** (±100 gambar/hari), **bukan** kuota API. | Tidak bisa dipanggil dari skrip secara resmi. |
-| **Gemini API**: semua model gambar (Nano Banana 2/2.1/Pro) **tidak punya free tier**; $0.034–$0.24 per gambar (batch ±50% lebih murah). | Jalur API = bayar per pakai, bukan langganan. |
-| **9router** merutekan model *chat* lewat OAuth langganan (Antigravity/Gemini CLI). Tidak terbukti mengekspos model gambar via OAuth, dan pemakaian sesi langganan lewat proxy berisiko melanggar ToS (akun bisa dibatasi/diblokir). Free tier Gemini CLI juga sudah dihentikan. | **Tidak dipakai** untuk gambar. Akun Google utama terlalu berharga untuk dipertaruhkan. |
-| Mesin: **RTX 5070 Ti Laptop 12 GB VRAM**; WSL dibatasi ±10 GB RAM (pernah crash). | Generate lokal layak, tapi ComfyUI harus jalan **native di Windows**, bukan di WSL. |
-| NaraClip sudah punya abstraksi `ImageProvider` + `provider_routes` (comfyui, 9router/openai-compatible, svg). Provider 9router saat ini hanya kirim teks prompt, tanpa gambar referensi. | Konsistensi karakter butuh input gambar referensi; provider baru harus mendukungnya. |
+| Fakta                                                                                                                                                                                                     | Dampak                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Langganan **Google AI Pro** memberi kuota Nano Banana di **aplikasi Gemini** (±100 gambar/hari), **bukan** kuota API.                                                                                     | Tidak ada jalur resmi untuk memanggilnya dari skrip.                             |
+| **Gemini API**: semua model gambar (Nano Banana 2/2.1/Pro) **tidak punya free tier**; $0.034–$0.24 per gambar (batch ±50% lebih murah).                                                                   | Jalur API = bayar per pakai, bukan langganan.                                    |
+| **9router** merutekan model _chat_ lewat OAuth langganan. Tidak terbukti mengekspos model gambar, dan pemakaian sesi langganan lewat proxy berisiko melanggar ToS. Free tier Gemini CLI sudah dihentikan. | **Tidak dipakai** untuk gambar.                                                  |
+| **useapi.net** (Google Flow API) berbayar US$15/bulan.                                                                                                                                                    | Tidak dipakai (melanggar syarat tanpa biaya bulanan tambahan).                   |
+| Mesin: **RTX 5070 Ti Laptop 12 GB VRAM**; WSL dibatasi ±10 GB RAM (pernah crash).                                                                                                                         | Bila ComfyUI dipakai, jalankan **native di Windows**, bukan di WSL.              |
+| Provider 9router/ComfyUI di aplikasi hanya mengirim teks prompt, tanpa gambar referensi.                                                                                                                  | Konsistensi karakter butuh input referensi; tambahkan bila provider itu dipakai. |
 
-Sumber: halaman harga Gemini API (ai.google.dev/gemini-api/docs/pricing), README & issue decolua/9router, panduan pihak ketiga soal kuota aplikasi Gemini (perlu dicek ulang berkala).
+Sumber: halaman harga Gemini API, README dan issue decolua/9router, panduan pihak ketiga soal kuota aplikasi Gemini (cek ulang tiap kuartal).
 
 ## 2. Keputusan arsitektur
 
-**Router gambar = provider registry NaraClip sendiri**, bukan 9router/LiteLLM. Alasan: sudah ada, tidak menambah proses yang harus dijaga, dan bisa mengatur urutan fallback + anggaran per job.
+**Alat utama gambar untuk video = `gemini_webapi`** (HanaokaYuzu/Gemini-API, Python 3.11+): memakai cookie login `__Secure-1PSID` / `__Secure-1PSIDTS` dari web Gemini, sehingga kuota Nano Banana langganan AI Pro terpakai. Mendukung generate dan edit dengan gambar referensi.
 
-Tiga jalur gambar, urut prioritas:
+- **Risiko:** tidak resmi (reverse-engineered), bisa rusak kapan saja, berpotensi melanggar ToS Google → akun bisa dibatasi.
+- **Mitigasi:** akun Google terpisah bila memungkinkan; jeda acak antar request; batas 30 gambar/hari (`NARACLIP_IMAGE_DAILY_CAP`); cookie dari Firefox (cookie Chromium cepat kedaluwarsa); watermark tidak dihapus.
+- **Letaknya:** skrip lokal untuk workflow video (`imagegen.py`), **bukan** provider di server aplikasi. Alasannya: sesi login pribadi tidak cocok untuk aplikasi multi-pengguna.
 
-| Jalur | Biaya | Otomatis | Dipakai untuk |
-|---|---|---|---|
-| **A. Lokal — ComfyUI di Windows (GPU)** | Rp0 | Penuh | Props, background, variasi pose dari referensi, cutout |
-| **B. Aplikasi Gemini (langganan AI Pro)** | Rp0 (sudah bayar) | Semi: tempel prompt, file di-*ingest* otomatis | Hero shot / karakter pertama yang butuh kualitas Nano Banana |
-| **C. Gemini API (opsional, default MATI)** | Bayar per gambar, plafon anggaran | Penuh | Darurat saja; batas `IMAGE_BUDGET_USD=0` secara default |
+Rantai cadangan (urut):
 
-Tidak direkomendasikan: OAuth langganan lewat router pihak ketiga (9router/Antigravity) untuk gambar.
+| #   | Backend                                                          | Status                       | Mekanisme                                                                 | Rusak bersamaan dengan                     |
+| --- | ---------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | `gemini_webapi`                                                  | ada, belum diuji cookie asli | Protokol web internal + cookie                                            | #2 bila Google ganti protokol              |
+| 2   | `baoyu-danger-gemini-web` (port TypeScript, JimLiu/baoyu-skills) | belum                        | Protokol yang sama, codebase lain                                         | #1 (hanya menolong bila bug di library #1) |
+| 3   | Playwright + profil browser yang sudah login                     | belum                        | Klik UI gemini.google.com: upload referensi, kirim prompt, unduh gambar   | Hanya bila UI berubah                      |
+| 4   | Playwright di Google Flow (labs.google/flow)                     | belum                        | Sama, situs berbeda                                                       | Independen                                 |
+| 5   | Prompt pack manual (`imagegen.py pack`)                          | ada                          | Tempel sendiri ke gemini.google.com, simpan dengan nama file yang tertera | Tidak pernah                               |
 
-**Jalur B+ (opsional, eksperimen) — web Gemini "rasa API" lewat cookie.** Paket tidak resmi `gemini_webapi` (HanaokaYuzu/Gemini-API, Python 3.11+) memanggil web app Gemini memakai cookie login (`__Secure-1PSID`, `__Secure-1PSIDTS`), jadi kuota Nano Banana dari langganan AI Pro bisa dipakai dari skrip: generate, edit dengan gambar referensi, 9:16. Versi MCP: AndyShaman/gemini-webapi-mcp (AGPL-3.0).
-- Risiko: reverse-engineered dan tidak resmi, bisa rusak kapan saja, berpotensi melanggar ToS Google (akses otomatis) → akun bisa dibatasi.
-- Mitigasi bila dipakai: akun Google **terpisah** (mis. anggota family sharing langganan, kalau plan-mu mendukung), volume rendah (±15 gambar/video, jauh di bawah kuota harian), jeda antar request, cookie dari Firefox (cookie Chromium cepat kedaluwarsa karena device-bound), watermark tidak dihapus.
-- Implementasi: skrip sidecar `renderer/tools/gemini_web_gen.py` membaca `image-jobs.json` (tanpa token LLM), bukan lewat MCP.
+Backend lain:
 
-Model lokal yang dikandidatkan (diuji di Fase 3, cek lisensi sebelum dipakai):
-- **Qwen-Image-Edit** (Apache-2.0): ganti pose/ekspresi dari gambar referensi karakter → konsistensi wajah.
-- **Qwen-Image / FLUX.1 (dev/Krea)** kuantisasi GGUF/FP8 agar muat 12 GB: props fotoreal dan background.
-- **BiRefNet** (node RMBG di ComfyUI, GPU Windows): cutout otomatis tanpa memakan RAM WSL.
+- **Gemini API (berbayar):** nonaktif. Tidak ada kode untuknya.
+- **ComfyUI lokal (Rp0, GPU):** **opsional dan belum diputuskan.** Dipertimbangkan hanya bila kualitas atau kuota web Gemini tidak cukup. Kandidat model (cek lisensi dulu): Qwen-Image-Edit (Apache-2.0) untuk variasi pose dari referensi, Qwen-Image/FLUX kuantisasi GGUF/FP8 untuk props dan background, BiRefNet untuk cutout.
+
+Di aplikasi NaraClip, rute image default tetap **`svg-local`** (placeholder tanpa dependensi). `comfyui` dan `9router` terdaftar sebagai opsi yang bisa dipilih lewat `provider_routes`.
 
 ## 3. Hemat token (Claude) — dari mana boros di proyek pedas-capsaicin
 
-| Pemborosan yang terjadi | Perbaikan |
-|---|---|
-| Build script ±700 baris ditulis ulang per video | Kit bersama `renderer/tools/vinconium-kit.mjs` (charW, prop, label, arrowTo, steam, embers, swap, camPush, SFX synth, narasi, caption, BGM). Per video cukup **shot list ±150 baris**. |
-| Banyak membaca gambar grid untuk mengukur koordinat (meja, mata, lidah, cabai) | `measure.py`: bbox alpha, deteksi mata googly, crop props, tepi meja → `data/measurements.json`. Claude membaca angka, bukan gambar. |
-| Iterasi snapshot berkali-kali karena cacat yang bisa dicek mesin | `qa.mjs` satu perintah: lint, check, alpha leak, black detect, caption cps/overlap, true peak, elemen keluar frame → laporan teks. Gambar hanya 1 contact sheet resolusi rendah di akhir. |
-| Pelajaran (mata bocor, defringe, TP AAC, symlink D:) diturunkan ulang | Masukkan ke `.claude/skills/vinconium-short/SKILL.md` + skrip `prep_visuals.py`, `make_srt_en.mjs`, `master.mjs` sebagai template. |
-| Semua kerja mekanis memakai model besar | Pekerjaan mekanis (rename, menjalankan render, QA) didelegasikan ke subagent model kecil; model besar hanya untuk naskah, shot list, dan review akhir. |
-| Diskusi panjang di luar produksi (nama channel) memakan konteks yang sama | Pisahkan sesi: satu sesi = satu video. Brainstorm di sesi/obrolan lain. |
+| Pemborosan yang terjadi                                                   | Perbaikan (belum dikerjakan)                                                                                                                                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build script ±700 baris ditulis ulang per video                           | Kit bersama `renderer/tools/vinconium-kit.mjs` (charW, prop, label, arrowTo, steam, embers, swap, camPush, SFX synth, narasi, caption, BGM). Per video cukup shot list ±150 baris.           |
+| Banyak membaca gambar grid untuk mengukur koordinat                       | `measure.py`: bbox alpha, deteksi mata googly, crop props, tepi meja → `data/measurements.json`. Claude membaca angka, bukan gambar.                                                         |
+| Iterasi snapshot berkali-kali untuk cacat yang bisa dicek mesin           | `qa.mjs` satu perintah: lint, check, alpha leak, black detect, caption cps/overlap, true peak, elemen keluar frame → laporan teks. Gambar hanya satu contact sheet resolusi rendah di akhir. |
+| Pelajaran (mata bocor, defringe, TP AAC, symlink D:) diturunkan ulang     | Masukkan ke SKILL.md vinconium-short dan skrip templat (`prep_visuals.py`, `make_srt_en.mjs`, `master.mjs`).                                                                                 |
+| Semua kerja mekanis memakai model besar                                   | Delegasikan rename, render, dan QA ke subagent model kecil; model besar untuk naskah, shot list, dan review akhir.                                                                           |
+| Diskusi panjang di luar produksi (nama channel) memakan konteks yang sama | Satu sesi = satu video; brainstorm di sesi lain.                                                                                                                                             |
 
-Target terukur (diverifikasi di Fase 5): pembacaan gambar ≤5 per video, satu sesi tanpa kompaksi per video, tidak ada penulisan ulang helper.
+Target terukur: pembacaan gambar ≤5 per video, satu sesi tanpa kompaksi per video, tidak ada penulisan ulang helper.
 
 ## 4. Fase kerja
 
-### Fase 1 — Kit & QA (hemat token; tidak butuh GPU)
-1. Ekstrak helper dari `pedas-capsaicin/scripts/build-pedas.mjs` ke `renderer/tools/vinconium-kit.mjs`.
-2. Ubah build pedas jadi pemakai kit; hasil render harus identik secara visual dengan v6 (bandingkan snapshot).
+### Fase 0 — Selesai (prototipe)
+
+`imagegen.py` (generate/pack/check), `image-jobs.json` pedas, `archive-content` / `restore-content`.
+Sisa untuk menutup fase ini: jalankan `imagegen.py check` lalu `generate --limit 1` dengan cookie asli; catat hasilnya.
+
+### Fase 1 — Kit & QA (hemat token; tanpa GPU)
+
+1. Ekstrak helper dari `build-pedas.mjs` ke `renderer/tools/vinconium-kit.mjs`.
+2. Ubah build pedas jadi pemakai kit; hasil render harus identik secara visual dengan v6.
 3. `renderer/tools/measure.py` dan `renderer/tools/qa.mjs`.
 4. Perbarui SKILL.md vinconium-short.
+
 - **Selesai bila:** rebuild pedas lewat kit → lint 0 error, `qa.mjs` hijau, snapshot sama dengan v6.
 
-### Fase 2 — Format job gambar + jalur B (tanpa GPU, langsung bermanfaat)
-1. Skema `data/image-jobs.json` per video: `id`, `kind` (char/prop/bg), `prompt`, `refs`, `bg` (white/gray), `size`, `lane` (local/gemini-app/api).
-2. Blok karakter tetap (`[CHAR]`) dan props (`[PROP]`) disimpan sebagai template, jadi prompt dirakit skrip, bukan ditulis ulang oleh LLM.
-3. `gen-prompt-pack.mjs` → `00_brief/prompt-pack.md` untuk job jalur B (siap tempel ke aplikasi Gemini, urut, dengan nama file target).
-4. `ingest.mjs` → pantau `D:\...\02_images\inbox`, cocokkan file ke job (urutan/nama), rename, simpan ke `generated-raw`, lalu cutout otomatis (Fase 3) atau tandai untuk cutout manual.
-- **Selesai bila:** satu video baru bisa dari ide → prompt pack → ingest tanpa rename manual.
+### Fase 2 — Rantai cadangan generator
 
-### Fase 3 — ComfyUI lokal di Windows (jalur A)
-1. Pasang ComfyUI portable di Windows + node GGUF + RMBG/BiRefNet; buka akses dari WSL (`localhost` dengan networking mirrored, atau IP host).
-2. Simpan workflow API (JSON) di `renderer/tools/comfy-workflows/`: `prop.json`, `background.json`, `pose-from-ref.json`, `cutout.json`.
-3. `gen-images.mjs <slug>`: jalankan job jalur A lewat ComfyUI, simpan ke folder D:, catat seed+model di `manifest.json`, lewati job yang hash-nya sudah ada (tidak generate ulang).
-4. Uji kualitas: generate ulang 10 props + 3 pose pedas-capsaicin, bandingkan berdampingan dengan hasil Gemini.
-- **Selesai bila:** props/background lokal lolos QA visual; keputusan tertulis job mana yang lokal vs aplikasi Gemini.
+1. Runner berantai yang mencoba backend #1 → #5 dan mencatat backend yang dipakai di `imagegen-manifest.json`.
+2. Backend #2 (port TypeScript), lalu #3 (Playwright Gemini), lalu #4 (Playwright Flow).
+3. `ingest.mjs`: pantau `D:\...\02_images\inbox`, cocokkan file manual ke job, rename ke `generated-raw`.
 
-### Fase 4 — Integrasi ke aplikasi NaraClip
-1. `ImageGenerationInput` ditambah `referenceImages` dan `background`.
-2. `ComfyUiImageProvider` mendukung workflow per `kind`; `GeminiImageProvider` (jalur C) di belakang flag + plafon anggaran.
-3. Seed `provider_routes`: `comfyui-local` primer → `svg-local` fallback; `gemini-api` nonaktif.
-4. Tes unit untuk routing, cache hash, dan plafon anggaran.
+- **Selesai bila:** mematikan backend #1 dengan sengaja (cookie kosong) tetap menghasilkan gambar lewat cadangan berikutnya.
 
-### Fase 5 — Ukur
-Produksi satu video baru dari `docs/ide-konten-niche-vinconium.md` memakai pipeline baru; catat jumlah gambar per jalur, waktu, jumlah iterasi render, dan pembacaan gambar.
+### Fase 3 — ComfyUI lokal (opsional; hanya bila diputuskan)
+
+1. Pasang ComfyUI portable di Windows + node GGUF + RMBG/BiRefNet; akses dari WSL via localhost (networking mirrored) atau IP host.
+2. Workflow API di `renderer/tools/comfy-workflows/` (`prop`, `background`, `pose-from-ref`, `cutout`).
+3. `ComfyUiImageProvider` mendukung workflow per `kind`; `ImageGenerationInput` ditambah `referenceImages` dan `background`.
+4. Uji: generate ulang 10 props + 3 pose pedas-capsaicin, bandingkan berdampingan dengan hasil Gemini.
+
+- **Selesai bila:** keputusan tertulis job mana yang lokal dan mana yang web Gemini.
+
+### Fase 4 — Ukur
+
+Produksi satu video baru dari `docs/ide-konten-niche-vinconium.md` memakai pipeline baru; catat jumlah gambar per backend, waktu, iterasi render, dan pembacaan gambar.
 
 ## 5. Risiko
 
-| Risiko | Mitigasi |
-|---|---|
-| Kualitas lokal di bawah Nano Banana (wajah, tangan) | Karakter pertama dari aplikasi Gemini; pose turunan lewat Qwen-Image-Edit; cutout & QA tetap. |
-| VRAM 12 GB tidak cukup untuk model penuh | GGUF Q4/Q5 atau FP8, satu model aktif per job. |
-| Lisensi model lokal | Prioritaskan Apache-2.0 (Qwen); cek lisensi FLUX sebelum dipakai untuk channel monetisasi. |
-| Kuota/aturan Google berubah | Fakta di bagian 1 dicek ulang tiap kuartal. |
-| Biaya tak sengaja di jalur C | Default mati, plafon anggaran wajib, log biaya per job. |
+| Risiko                                                     | Mitigasi                                                                            |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Google mengubah web Gemini; `gemini_webapi` rusak          | Rantai cadangan (#2–#5); `pack` manual selalu tersedia.                             |
+| Akun dibatasi karena akses otomatis                        | Akun terpisah, volume rendah, jeda acak, tanpa penghapusan watermark.               |
+| Cookie kedaluwarsa (terutama Chromium)                     | Cookie dari Firefox; `imagegen.py check` sebelum batch.                             |
+| Kualitas lokal (bila ComfyUI dipakai) di bawah Nano Banana | Karakter pertama dari web Gemini; pose turunan lewat Qwen-Image-Edit; QA tetap.     |
+| VRAM 12 GB tidak cukup                                     | GGUF Q4/Q5 atau FP8, satu model aktif per job.                                      |
+| Lisensi model lokal                                        | Prioritaskan Apache-2.0; cek lisensi FLUX sebelum dipakai untuk channel monetisasi. |
+| Kuota/aturan Google berubah                                | Fakta di bagian 1 dicek ulang tiap kuartal.                                         |
 
-## 6. Keputusan yang perlu dari pengguna
-1. Setuju jalur C tetap mati (murni Rp0)?
-2. Boleh pasang ComfyUI di Windows (±30–40 GB model)?
-3. Cutout tetap manual atau otomatis lewat BiRefNet lokal?
+## 6. Keputusan
 
-## 7. Update 2026-10-09 — keputusan: jalur utama gambar = web Gemini via cookie
+Sudah diputuskan:
 
-### 7.1 Rantai fallback generator (`renderer/tools/imagegen/`)
-Satu runner membaca `data/image-jobs.json`, mencoba backend berurutan, berhenti di yang pertama sukses, mencatat backend + durasi di `manifest.json`, dan melewati job yang hash-nya sudah ada.
+- Jalur utama gambar = `gemini_webapi` (bukan ComfyUI, bukan Gemini API berbayar, bukan 9router/OAuth).
+- Tanpa biaya bulanan tambahan: Gemini API tetap nonaktif.
 
-| Urutan | Backend | Mekanisme | Rusak bersamaan dengan |
-|---|---|---|---|
-| 1 | `gemini_webapi` (Python, HanaokaYuzu) | Protokol web internal + cookie | #2 bila Google ganti protokol |
-| 2 | `baoyu-danger-gemini-web` (TypeScript port, JimLiu/baoyu-skills) | Protokol yang sama, codebase lain | #1 (hanya menolong bila bug di library #1) |
-| 3 | Playwright + profil browser login sendiri (dibuat sendiri) | Klik UI gemini.google.com: upload referensi, kirim prompt, unduh gambar | Hanya bila UI berubah — independen dari #1/#2 |
-| 4 | Playwright di Google Flow (labs.google/flow) | Sama, situs berbeda; gambar Nano Banana gratis di semua plan | Independen |
-| 5 | Prompt pack + `ingest.mjs` (manual) | Tempel sendiri, file di-rename otomatis | Tidak pernah |
+Masih terbuka:
 
-Tidak dipakai: useapi.net (Google Flow API) — US$15/bulan, melanggar syarat "tanpa biaya bulanan tambahan"; ekstensi browser — hanya helper UI, Playwright memberi kontrol penuh.
-Aturan aman: akun Google terpisah bila memungkinkan, jeda acak antar request, maks ±30 gambar/hari, watermark tidak dihapus, cookie dari Firefox.
+1. Pasang ComfyUI di Windows (±30–40 GB model) atau tidak?
+2. Cutout tetap manual atau otomatis lewat BiRefNet lokal?
+3. Jalankan `archive-content --prune` pada pedas-capsaicin? (menghapus previews, hasil render lama, dan folder turunan; final tetap ada)
 
-### 7.2 Arsip aset per video
-Ukuran pedas-capsaicin sekarang: exports 348 MB (v1–v6 + master), previews 139 MB, source 63 MB, audio 39 MB, generated 28 MB, processed 24 MB.
-Penghematan terbesar = **membuang yang bisa dibuat ulang**, bukan kompresi (PNG/MP4 sudah terkompres).
+## 7. Arsip aset per video
 
-`renderer/tools/archive-content.mjs <slug>` setelah video final:
-1. Tetap terbuka: `exports/final` (master MP4), `.srt`, README, deskripsi → disalin ke `D:\Projects\Shorts\<NN_slug>\05_export\`.
-2. Dibuang (bisa dibangun ulang dari skrip): `previews/`, `exports/v*` non-final, `assets/visuals/processed/`, `assets/audio/processed/`, plate di `generated/background/`.
-3. Dikemas ke `D:\Projects\Shorts\<NN_slug>\archive\<slug>-src.tar.zst` (zstd -19 --long): skrip, data, composition.html, sumber gambar/VO/BGM/SFX, manifest. Disertai `sha256` dan daftar isi.
-4. `restore-content.mjs <slug>` membongkar arsip, membuat ulang symlink, lalu `build` + render bisa jalan lagi.
-Estimasi: ±640 MB → ±0.2 GB arsip + ±50 MB final. Perlu `sudo apt install zstd` (fallback: `tar.xz`).
+Ukuran pedas-capsaicin sebelum prune: exports 348 MB (v1–v6 + master), previews 139 MB, source 63 MB, audio 39 MB, generated 28 MB, processed 24 MB. Penghematan terbesar = **membuang yang bisa dibuat ulang**, bukan kompresi (PNG/MP4 sudah terkompres).
+
+`node renderer/tools/archive-content.mjs <slug> [--shorts-dir <dir>] [--prune]`, setelah video final:
+
+1. Final (MP4 master dan `.srt`) dan README disalin ke `<shorts-dir>/05_export/`.
+2. Semua yang tidak bisa dibangun ulang dikemas ke `<shorts-dir>/archive/<slug>-src.tar.xz` (symlink tetap berupa symlink; sumber gambar/VO yang sudah ada di D: tidak digandakan), beserta `.sha256` dan `RESTORE.md`. Arsip diverifikasi (daftar isi + checksum).
+3. Dengan `--prune` (dan hanya setelah arsip lolos verifikasi) folder turunan dihapus: `previews/`, `assets/visuals/processed/`, `assets/audio/processed/`, `assets/visuals/generated/background/`, serta hasil render lama selain final.
+4. `node renderer/tools/restore-content.mjs <slug> [--shorts-dir <dir>] [--into <dir>]` memverifikasi checksum lalu membongkar arsip; build dan render dijalankan ulang sesuai `RESTORE.md`.
+
+Hasil uji pada pedas-capsaicin: arsip 16 MB (karena sumber besar sudah di D: lewat symlink), restore ke folder uji berhasil. Format `tar.xz` dipakai karena `zstd` belum terpasang (butuh sudo); ganti ke `tar --zstd` bila sudah ada.
