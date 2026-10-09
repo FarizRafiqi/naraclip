@@ -1,0 +1,9 @@
+{
+  "char": "Using the attached image as the exact character reference: same man (same face, short dark wavy hair, light mustache and stubble), same dark navy-and-maroon plaid flannel shirt with sleeves rolled to the forearms, same soft lighting. Cartoon googly eyes pasted flat over his real eyes (white circles, thin black outline, black pupils). Pose: {text} Waist-up, centered, facing camera, {bg}, no shadows, no table, no text, photorealistic, 9:16.",
+  "prop": "{text} Real texture, sharp specular highlights, object centered and fully in frame, no text, no logo, no arrows, no hands, no cast shadow on the background. Use a {bg}, 1:1.",
+  "bg": "{text} No people, no objects on the table, no text, 9:16.",
+  "backgrounds": {
+    "white": "pure white #FFFFFF background",
+    "gray": "solid mid-gray #808080 background"
+  }
+}
