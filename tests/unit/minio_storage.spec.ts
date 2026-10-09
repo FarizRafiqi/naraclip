@@ -5,12 +5,12 @@ import {
   type S3Client,
 } from '@aws-sdk/client-s3'
 import { test } from '@japa/runner'
-import R2Storage from '#services/storage/r2_storage'
+import MinioStorage from '#services/storage/minio_storage'
 
-test.group('R2Storage', () => {
+test.group('MinioStorage', () => {
   test('builds a scoped key with predictable segments', ({ assert }) => {
     assert.equal(
-      R2Storage.buildKey({
+      MinioStorage.buildKey({
         userId: 7,
         projectId: 12,
         assetId: 44,
@@ -23,7 +23,7 @@ test.group('R2Storage', () => {
 
   test('rejects path traversal in key segments', ({ assert }) => {
     assert.throws(() =>
-      R2Storage.buildKey({
+      MinioStorage.buildKey({
         userId: 7,
         projectId: 12,
         assetId: 44,
@@ -41,7 +41,7 @@ test.group('R2Storage', () => {
         return {}
       },
     } as unknown as S3Client
-    const storage = new R2Storage({ client, bucket: 'naraclip-test' })
+    const storage = new MinioStorage({ client, bucket: 'naraclip-test' })
 
     const result = await storage.upload({
       key: 'users/7/projects/12/image/44/hero.png',
@@ -78,7 +78,7 @@ test.group('R2Storage', () => {
         return {}
       },
     } as unknown as S3Client
-    const storage = new R2Storage({ client, bucket: 'naraclip-test' })
+    const storage = new MinioStorage({ client, bucket: 'naraclip-test' })
     const key = 'users/7/projects/12/video/44/final.mp4'
 
     assert.deepEqual(await storage.head(key), {
@@ -94,7 +94,7 @@ test.group('R2Storage', () => {
 
   test('rejects unsupported MIME types before upload', async ({ assert }) => {
     const client = { send: async () => ({}) } as unknown as S3Client
-    const storage = new R2Storage({ client, bucket: 'naraclip-test' })
+    const storage = new MinioStorage({ client, bucket: 'naraclip-test' })
 
     await assert.rejects(
       () =>

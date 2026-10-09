@@ -2,12 +2,12 @@ import { createHash } from 'node:crypto'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import Asset from '#models/asset'
-import R2Storage, { type R2UploadInput } from '#services/storage/r2_storage'
+import MinioStorage, { type StorageUploadInput } from '#services/storage/minio_storage'
 import type { CaptionStyle, ProviderConfigSnapshot } from '@naraclip/contracts'
 import DeterministicTtsProvider, { type TtsProvider } from './tts_provider.js'
 import { buildCaptionCues, buildWordTimings, normalizeWordTimings } from './caption_service.js'
 
-type AudioStorage = Pick<R2Storage, 'upload'>
+type AudioStorage = Pick<MinioStorage, 'upload'>
 
 function parseAssetMetadata(value: unknown): Record<string, unknown> {
   if (typeof value === 'string') {
@@ -32,7 +32,7 @@ const DEFAULT_CAPTION_STYLE: CaptionStyle = {
 export default class TtsService {
   constructor(
     private readonly provider: TtsProvider = new DeterministicTtsProvider(),
-    private readonly storage: AudioStorage = new R2Storage()
+    private readonly storage: AudioStorage = new MinioStorage()
   ) {}
 
   async synthesizeForScene(input: {
@@ -76,14 +76,14 @@ export default class TtsService {
       durationMs
     )
     const checksumSha256 = createHash('sha256').update(result.body).digest('hex')
-    const storageKey = R2Storage.buildKey({
+    const storageKey = MinioStorage.buildKey({
       userId: input.userId,
       projectId: input.projectId,
       assetId: providerAssetId.slice(0, 16),
       kind: 'audio',
       filename: 'narration.wav',
     })
-    const upload: R2UploadInput = {
+    const upload: StorageUploadInput = {
       key: storageKey,
       body: result.body,
       contentType: result.mimeType,

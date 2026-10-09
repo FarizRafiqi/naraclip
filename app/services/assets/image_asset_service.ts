@@ -2,16 +2,16 @@ import { createHash } from 'node:crypto'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import Asset from '#models/asset'
-import R2Storage, { type R2UploadInput } from '#services/storage/r2_storage'
+import MinioStorage, { type StorageUploadInput } from '#services/storage/minio_storage'
 import type { ProviderConfigSnapshot } from '@naraclip/contracts'
-import SvgImageProvider, { type ImageProvider } from '#services/providers/image_provider'
+import { resolveImageProvider, type ImageProvider } from '#services/providers/image_provider'
 
-export type AssetStorage = Pick<R2Storage, 'upload'>
+export type AssetStorage = Pick<MinioStorage, 'upload'>
 
 export default class ImageAssetService {
   constructor(
-    private readonly provider: ImageProvider = new SvgImageProvider(),
-    private readonly storage: AssetStorage = new R2Storage()
+    private readonly provider?: ImageProvider,
+    private readonly storage: AssetStorage = new MinioStorage()
   ) {}
 
   async generateForScene(input: {
@@ -37,7 +37,8 @@ export default class ImageAssetService {
       return { asset: existing, reused: true }
     }
 
-    const result = await this.provider.generate(
+    const provider = this.provider ?? resolveImageProvider(input.snapshot.providerId)
+    const result = await provider.generate(
       {
         prompt: input.prompt,
         width: input.width ?? 1080,
@@ -47,14 +48,14 @@ export default class ImageAssetService {
     )
     const checksumSha256 = createHash('sha256').update(result.body).digest('hex')
     const filename = result.mimeType === 'image/svg+xml' ? 'asset.svg' : 'asset.png'
-    const storageKey = R2Storage.buildKey({
+    const storageKey = MinioStorage.buildKey({
       userId: input.userId,
       projectId: input.projectId,
       assetId: promptHash.slice(0, 16),
       kind: 'image',
       filename,
     })
-    const upload: R2UploadInput = {
+    const upload: StorageUploadInput = {
       key: storageKey,
       body: result.body,
       contentType: result.mimeType,

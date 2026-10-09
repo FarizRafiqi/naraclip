@@ -1,6 +1,8 @@
 import {
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -9,7 +11,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import env from '#start/env'
 
-export type R2UploadInput = {
+export type StorageUploadInput = {
   key: string
   body: NonNullable<PutObjectCommandInput['Body']>
   contentType: string
@@ -18,7 +20,7 @@ export type R2UploadInput = {
   metadata?: Record<string, string>
 }
 
-export type R2AssetHead = {
+export type StorageAssetHead = {
   key: string
   contentType: string | undefined
   byteSize: number | undefined
@@ -26,15 +28,14 @@ export type R2AssetHead = {
   metadata: Record<string, string>
 }
 
-type R2StorageOptions = {
+export type MinioStorageOptions = {
   client?: S3Client
   bucket?: string
   signedUrlTtlSeconds?: number
 }
 
 const SAFE_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
-const SUPPORTED_MIME_TYPE =
-  /^(?:image\/[A-Za-z0-9.+-]+|audio\/[A-Za-z0-9.+-]+|video\/(?:mp4|webm))$/i
+const SUPPORTED_MIME_TYPE = /^(?:image\/[a-z0-9.+-]+|audio\/[a-z0-9.+-]+|video\/(?:mp4|webm))$/i
 const SHA256_HEX = /^[A-Fa-f0-9]{64}$/
 
 function assertSafeKeySegment(value: string, name: string) {
@@ -55,27 +56,29 @@ function assertSupportedMimeType(contentType: string) {
   }
 }
 
-export default class R2Storage {
+export default class MinioStorage {
   private readonly client: S3Client
   private readonly bucket: string
   private readonly signedUrlTtlSeconds: number
 
-  constructor(options: R2StorageOptions = {}) {
-    const endpoint = env.get('R2_ENDPOINT')
-    const accessKeyId = env.get('R2_ACCESS_KEY_ID')
-    const secretAccessKey = env.get('R2_SECRET_ACCESS_KEY')?.release()
+  constructor(options: MinioStorageOptions = {}) {
+    const endpoint = env.get('MINIO_ENDPOINT')
+    const accessKeyId = env.get('MINIO_ACCESS_KEY')
+    const secretAccessKey = env.get('MINIO_SECRET_KEY')?.release()
+    const region = env.get('MINIO_REGION', 'us-east-1')
 
     this.client =
       options.client ??
       new S3Client({
         endpoint,
-        region: env.get('R2_REGION', 'auto'),
+        region,
         credentials: accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
         forcePathStyle: true,
       })
-    this.bucket = options.bucket ?? env.get('R2_BUCKET', '')
+
+    this.bucket = options.bucket ?? env.get('MINIO_BUCKET', '')
     this.signedUrlTtlSeconds =
-      options.signedUrlTtlSeconds ?? env.get('R2_SIGNED_URL_TTL_SECONDS', 900)
+      options.signedUrlTtlSeconds ?? env.get('MINIO_SIGNED_URL_TTL_SECONDS', 900)
   }
 
   static buildKey(input: {
@@ -100,7 +103,27 @@ export default class R2Storage {
     return `users/${segments.userId}/projects/${segments.projectId}/${segments.kind}/${segments.assetId}/${segments.filename}`
   }
 
-  async upload(input: R2UploadInput) {
+  /**
+   * Memastikan bucket sudah ada di MinIO, jika belum maka otomatis dibuat
+   */
+  async ensureBucketExists(): Promise<void> {
+    if (!this.bucket) return
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }))
+    } catch (error: any) {
+      const isNotFound =
+        error.name === 'NotFound' ||
+        error.name === 'NoSuchBucket' ||
+        error.$metadata?.httpStatusCode === 404
+      if (isNotFound) {
+        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
+      } else {
+        throw error
+      }
+    }
+  }
+
+  async upload(input: StorageUploadInput) {
     this.assertConfigured()
     assertSafeStorageKey(input.key)
     assertSupportedMimeType(input.contentType)
@@ -109,19 +132,31 @@ export default class R2Storage {
       throw new Error('checksumSha256 must be a 64-character hexadecimal SHA-256 digest')
     }
 
-    await this.client.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: input.key,
-        Body: input.body,
-        ContentType: input.contentType,
-        ContentLength: input.byteSize,
-        Metadata: {
-          ...input.metadata,
-          ...(input.checksumSha256 ? { 'checksum-sha256': input.checksumSha256 } : {}),
-        },
-      })
-    )
+    const sendPut = () =>
+      this.client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: input.key,
+          Body: input.body,
+          ContentType: input.contentType,
+          ContentLength: input.byteSize,
+          Metadata: {
+            ...input.metadata,
+            ...(input.checksumSha256 ? { 'checksum-sha256': input.checksumSha256 } : {}),
+          },
+        })
+      )
+
+    try {
+      await sendPut()
+    } catch (error: any) {
+      if (error.name === 'NoSuchBucket' || error.$metadata?.httpStatusCode === 404) {
+        await this.ensureBucketExists()
+        await sendPut()
+      } else {
+        throw error
+      }
+    }
 
     return {
       key: input.key,
@@ -162,7 +197,7 @@ export default class R2Storage {
     )
   }
 
-  async head(key: string): Promise<R2AssetHead> {
+  async head(key: string): Promise<StorageAssetHead> {
     this.assertConfigured()
     assertSafeStorageKey(key)
 
@@ -188,7 +223,7 @@ export default class R2Storage {
 
   private assertConfigured() {
     if (!this.bucket) {
-      throw new Error('R2 storage is not configured: R2_BUCKET is missing')
+      throw new Error('Object storage is not configured: MINIO_BUCKET is missing')
     }
   }
 }

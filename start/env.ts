@@ -35,13 +35,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_POOL_MIN: Env.schema.number.optional(),
   DB_POOL_MAX: Env.schema.number.optional(),
 
-  // Storage
-  R2_ENDPOINT: Env.schema.string.optional(),
-  R2_REGION: Env.schema.string.optional(),
-  R2_BUCKET: Env.schema.string.optional(),
-  R2_ACCESS_KEY_ID: Env.schema.string.optional(),
-  R2_SECRET_ACCESS_KEY: Env.schema.secret.optional(),
-  R2_SIGNED_URL_TTL_SECONDS: Env.schema.number.optional(),
+  // Storage (MinIO S3)
+  MINIO_ENDPOINT: Env.schema.string.optional(),
+  MINIO_REGION: Env.schema.string.optional(),
+  MINIO_BUCKET: Env.schema.string.optional(),
+  MINIO_ACCESS_KEY: Env.schema.string.optional(),
+  MINIO_SECRET_KEY: Env.schema.secret.optional(),
+  MINIO_CONSOLE_PORT: Env.schema.number.optional(),
+  MINIO_SIGNED_URL_TTL_SECONDS: Env.schema.number.optional(),
 
   // Queue
   REDIS_URL: Env.schema.string.optional(),
@@ -49,4 +50,9 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // HTTP
   CORS_ORIGIN: Env.schema.string.optional(),
+
+  // AI Gateways & Local Engines
+  NINEROUTER_ENDPOINT: Env.schema.string.optional(),
+  NINEROUTER_API_KEY: Env.schema.secret.optional(),
+  COMFYUI_ENDPOINT: Env.schema.string.optional(),
 })

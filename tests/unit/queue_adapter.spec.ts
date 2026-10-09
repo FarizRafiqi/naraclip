@@ -8,6 +8,7 @@ test.group('Queue adapter', () => {
     const second = await queue.add('story', { videoId: 1, idempotencyKey: 'story-1' }, 'story-1')
 
     assert.deepEqual(second, first)
-    assert.equal((await queue.status('story', first.id))?.state, 'queued')
+    const status = await queue.status('story', first.id)
+    assert.equal(status?.state, 'queued')
   })
 })

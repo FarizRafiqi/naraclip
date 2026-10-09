@@ -10,6 +10,8 @@ const defaults = [
     promptVersion: 'story-v1',
   },
   { providerId: 'svg-local', capability: 'image', model: 'svg-v1', promptVersion: null },
+  { providerId: 'comfyui', capability: 'image', model: 'qwen-image-2.1', promptVersion: null },
+  { providerId: '9router', capability: 'image', model: 'flux-schnell', promptVersion: null },
   {
     providerId: 'deterministic-local',
     capability: 'tts',
@@ -43,7 +45,9 @@ export default class ProviderSeeder extends BaseSeeder {
         }
       )
 
-      configs.set(input.capability, config)
+      if (!configs.has(input.capability)) {
+        configs.set(input.capability, config)
+      }
     }
 
     for (const [capability, config] of configs) {
