@@ -70,7 +70,8 @@ config/              application, database, auth, Inertia, and Vite config
 database/            Lucid migrations, seeders, and generated schema
 inertia/             React pages, layouts, and frontend entrypoints
 packages/contracts/  versioned SceneSpec, RenderSpec, and provider contracts
-renderer/            HyperFrames composition for 9:16 output
+renderer/            HyperFrames workspace and per-video projects in content/<slug>/
+docs/                 product notes, specifications, and the video-production playbook
 resources/           Inertia HTML shell
 start/               routes, environment, and application kernel
 tests/               Japa functional/unit tests and contract fixtures
@@ -120,6 +121,8 @@ Start the HyperFrames workspace separately when working on compositions:
 ```bash
 pnpm dev:renderer
 ```
+
+Follow the [video production playbook](docs/video-production-playbook.md) when creating or revising video content.
 
 ## Useful commands
 
