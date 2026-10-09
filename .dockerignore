@@ -1,0 +1,39 @@
+# Git & VCS
+.git/
+.gitignore
+
+# Dependencies & Build artifacts
+node_modules/
+build/
+dist/
+public/assets/
+.pnpm-store/
+
+# Local configuration & Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime caches & Temp
+tmp/*
+!tmp/.gitkeep
+*.log
+coverage/
+.turbo/
+.cache/
+
+# Local Video Workspaces & Renders
+renderer/content/*
+!renderer/content/.gitkeep
+renderer/previews/
+renderer/exports/
+*.mp4
+*.mov
+*.wav
+*.m4a
+
+# Editor & AI settings
+.vscode/
+.idea/
+.claude/
+.gemini/
