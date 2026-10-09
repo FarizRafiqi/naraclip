@@ -61,6 +61,10 @@ def load_jobs(slug: str) -> list[dict]:
     return json.loads(f.read_text())['jobs']
 
 
+def has_output(outd: Path, job_id: str) -> bool:
+    return any('.tmp.' not in p.name for p in outd.glob(job_id + '.*'))
+
+
 def compose(job: dict) -> str:
     kind = job['kind']
     tpl = TEMPLATES[kind]
@@ -121,6 +125,15 @@ def bump_usage() -> None:
     STATE_FILE.write_text(json.dumps({'date': str(date.today()), 'count': usage_today() + 1}))
 
 
+def finalize_extension(tmp: Path, job_id: str) -> str:
+    """The web client does not tell us the encoding; name the file after its real magic bytes."""
+    head = tmp.read_bytes()[:12]
+    ext = '.png' if head.startswith(b'\x89PNG') else '.jpg' if head.startswith(b'\xff\xd8') else '.webp' if head[8:12] == b'WEBP' else '.png'
+    final = tmp.with_name(job_id + ext)
+    tmp.replace(final)
+    return str(final)
+
+
 async def make_client():
     from gemini_webapi import GeminiClient
 
@@ -155,7 +168,7 @@ async def cmd_generate(args) -> None:
     outd.mkdir(parents=True, exist_ok=True)
     manifest_f = content_dir(slug) / 'data/imagegen-manifest.json'
     manifest = json.loads(manifest_f.read_text()) if manifest_f.exists() else {}
-    todo = [j for j in jobs if not any(outd.glob(j['id'] + '.*'))]
+    todo = [j for j in jobs if not has_output(outd, j['id'])]
     if args.limit:
         todo = todo[: args.limit]
     print(f'{len(jobs)} web jobs, {len(jobs) - len(todo)} cached/skipped, {len(todo)} to generate -> {outd}')
@@ -180,7 +193,8 @@ async def cmd_generate(args) -> None:
                     imgs = resp.images
                     if not imgs:
                         raise ImageGenerationError('no image in response: ' + (resp.text or '')[:120])
-                    path = await imgs[0].save(path=str(outd), filename=j['id'] + '.png', full_size=True)
+                    tmp = await imgs[0].save(path=str(outd), filename=j['id'] + '.tmp.png', full_size=True)
+                    path = finalize_extension(Path(tmp), j['id'])
                     bump_usage()
                     manifest[j['id']] = {'backend': 'gemini_webapi', 'file': Path(path).name,
                                          'seconds': round(time.time() - t0, 1), 'refs': j.get('refs', []),
@@ -212,7 +226,7 @@ def cmd_pack(args) -> None:
              f'Simpan hasil ke `{outd}` dengan nama file di kolom "Simpan sebagai" (JPG/PNG).',
              'Generate job yang punya referensi SETELAH referensinya jadi; lampirkan file referensi di chat Gemini.', '']
     for i, j in enumerate(jobs, 1):
-        have = any(outd.glob(j['id'] + '.*'))
+        have = has_output(outd, j['id'])
         lines += [f'## {i}. {j["id"]} {"(sudah ada)" if have else ""}'.rstrip(),
                   f'- Simpan sebagai: `{j["id"]}.png`',
                   f'- Lampirkan: {", ".join(j.get("refs", [])) or "-"}',

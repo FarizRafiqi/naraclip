@@ -23,7 +23,13 @@ if (!fs.existsSync(content)) throw new Error(`no workspace: ${content}`)
 const SHORTS = '/mnt/d/Projects/Shorts'
 const shortsDir =
   flag('--shorts-dir') ??
-  path.join(SHORTS, fs.readdirSync(SHORTS).find((d) => new RegExp(`^\\d+_${slug}$`).test(d)) ?? (() => { throw new Error('shorts dir not found; pass --shorts-dir') })())
+  path.join(
+    SHORTS,
+    fs.readdirSync(SHORTS).find((d) => new RegExp(`^\\d+_${slug}$`).test(d)) ??
+      (() => {
+        throw new Error('shorts dir not found; pass --shorts-dir')
+      })()
+  )
 const exportDir = path.join(shortsDir, '05_export')
 const archiveDir = path.join(shortsDir, 'archive')
 fs.mkdirSync(exportDir, { recursive: true })
@@ -36,36 +42,74 @@ const rel = (p) => path.relative(content, p)
 const finalLink = path.join(content, 'exports/final.mp4')
 if (!fs.existsSync(finalLink)) throw new Error('exports/final.mp4 missing — nothing to keep')
 const finalReal = fs.realpathSync(finalLink)
-sh('/home/farizrafiqi/.local/bin/ffmpeg', ['-v', 'error', '-i', finalReal, '-f', 'null', '-']) // throws if not decodable
-const keep = [finalReal, ...fs.readdirSync(path.join(content, 'exports')).filter((f) => f.endsWith('.srt')).map((f) => path.join(content, 'exports', f))]
-for (const f of keep) fs.copyFileSync(f, path.join(exportDir, path.basename(f)))
+const FFMPEG = fs.existsSync(path.join(process.env.HOME ?? '', '.local/bin/ffmpeg'))
+  ? path.join(process.env.HOME, '.local/bin/ffmpeg')
+  : 'ffmpeg'
+sh(FFMPEG, ['-v', 'error', '-i', finalReal, '-f', 'null', '-']) // throws if not decodable
+const keep = [
+  finalReal,
+  ...fs
+    .readdirSync(path.join(content, 'exports'))
+    .filter((f) => f.endsWith('.srt'))
+    .map((f) => path.join(content, 'exports', f)),
+]
+// <slug>-<version>.mp4 (drop the "-master" suffix); files already prefixed with the slug keep their name
+const exportName = (f) => {
+  const b = path.basename(f).replace(/-master(?=\.mp4$)/, '')
+  return b.startsWith(slug) ? b : `${slug}-${b}`
+}
+for (const f of keep) fs.copyFileSync(f, path.join(exportDir, exportName(f)))
 fs.copyFileSync(path.join(content, 'README.md'), path.join(exportDir, 'README.md'))
 console.log('final ->', exportDir, keep.map((f) => path.basename(f)).join(', '))
 
 // 2. archive (everything except rebuildable + final/exports + the archive's own output)
-const EXCLUDE = ['previews', 'exports', 'assets/visuals/processed', 'assets/audio/processed', 'assets/visuals/generated/background', 'node_modules']
+const EXCLUDE = [
+  'previews',
+  'exports',
+  'assets/visuals/processed',
+  'assets/audio/processed',
+  'assets/visuals/generated/background',
+  'node_modules',
+]
 const tarPath = path.join(archiveDir, `${slug}-src.tar.xz`)
-sh('tar', ['-C', path.join(root, 'renderer/content'), '-cJf', tarPath, ...EXCLUDE.map((e) => `--exclude=${slug}/${e}`), '--exclude-vcs', slug])
+sh('tar', [
+  '-C',
+  path.join(root, 'renderer/content'),
+  '-cJf',
+  tarPath,
+  ...EXCLUDE.map((e) => `--exclude=${slug}/${e}`),
+  '--exclude-vcs',
+  slug,
+])
 const list = sh('tar', ['-tJf', tarPath]).trim().split('\n')
 const sha = createHash('sha256').update(fs.readFileSync(tarPath)).digest('hex')
 fs.writeFileSync(`${tarPath}.sha256`, `${sha}  ${path.basename(tarPath)}\n`)
 const mb = (p) => (fs.statSync(p).size / 1048576).toFixed(1)
-console.log(`archive ${tarPath} ${mb(tarPath)} MB, ${list.length} entries, sha256 ${sha.slice(0, 12)}…`)
+console.log(
+  `archive ${tarPath} ${mb(tarPath)} MB, ${list.length} entries, sha256 ${sha.slice(0, 12)}…`
+)
 fs.writeFileSync(
   path.join(archiveDir, 'RESTORE.md'),
-  `# Restore ${slug}\n\n\`node renderer/tools/restore-content.mjs ${slug}\`\n\nThen rebuild derived files:\n1. \`uv run --python 3.13 --with numpy,scipy,pillow python renderer/content/${slug}/scripts/prep_visuals.py\`\n2. \`node renderer/content/${slug}/scripts/build-pedas.mjs\` (the build script for this slug)\n3. render + master as in the video README.\n\nSymlinks inside the archive point at ${shortsDir}; keep that folder in place.\n`
+  `# Restore ${slug}\n\n\`node renderer/tools/restore-content.mjs ${slug}\`\n\nThen rebuild derived files (steps depend on the video; see renderer/content/${slug}/README.md):\n1. run the prep script(s) in renderer/content/${slug}/scripts/ (e.g. prep_visuals.py) if present\n2. run the build script in renderer/content/${slug}/scripts/ (it writes composition.html and the processed audio)\n3. render and master as described in the video README.\n\nSymlinks inside the archive point at ${shortsDir}; keep that folder in place.\n`
 )
 
 // 3. prune
 const freed = []
 if (prune) {
-  if (!list.some((l) => l.endsWith('composition.html')) || !list.some((l) => l.includes('/scripts/'))) throw new Error('archive looks incomplete; refusing to prune')
+  if (
+    !list.some((l) => l.endsWith('composition.html')) ||
+    !list.some((l) => l.includes('/scripts/'))
+  )
+    throw new Error('archive looks incomplete; refusing to prune')
   const del = [
     'previews',
     'assets/visuals/processed',
     'assets/audio/processed',
     'assets/visuals/generated/background',
-    ...fs.readdirSync(path.join(content, 'exports')).filter((f) => f !== path.basename(finalReal) && f !== 'final.mp4' && !f.endsWith('.srt')).map((f) => `exports/${f}`),
+    ...fs
+      .readdirSync(path.join(content, 'exports'))
+      .filter((f) => f !== path.basename(finalReal) && f !== 'final.mp4' && !f.endsWith('.srt'))
+      .map((f) => `exports/${f}`),
   ]
   for (const d of del) {
     const p = path.join(content, d)
@@ -78,4 +122,7 @@ if (prune) {
 } else {
   console.log('dry: pass --prune to delete rebuildable folders (previews, processed, old exports)')
 }
-console.log('workspace now', sh('du', ['-shL', '--exclude=assets/visuals/source', content]).split('\t')[0])
+console.log(
+  'workspace now',
+  sh('du', ['-shL', '--exclude=assets/visuals/source', content]).split('\t')[0]
+)
