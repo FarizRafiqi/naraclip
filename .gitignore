@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+build/
+dist/
+public/assets/
+.next/
+out/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Runtime data
+tmp/*.sqlite*
+coverage/
+
+# Tooling
+.turbo/
+.adonisjs/*
+!.adonisjs/
+!.adonisjs/client/
+!.adonisjs/client/**
+!.adonisjs/server/
+!.adonisjs/server/**
+.DS_Store

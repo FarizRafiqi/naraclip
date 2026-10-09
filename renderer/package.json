@@ -1,0 +1,20 @@
+{
+  "name": "@naraclip/renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.4 preview",
+    "check": "npx --yes hyperframes@0.8.4 check",
+    "render": "npx --yes hyperframes@0.8.4 render",
+    "lint": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@naraclip/contracts": "workspace:*",
+    "hyperframes": "0.8.4"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}

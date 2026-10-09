@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "scene-geography-001",
+  "index": 0,
+  "archetype": "GEOGRAPHY_GIS_SATELLITE",
+  "title": "A city seen as a living system",
+  "narration": "Satellite layers reveal patterns that are difficult to see from street level.",
+  "durationMs": 7000,
+  "visualAssets": [
+    {
+      "id": "asset-map-001",
+      "kind": "map",
+      "source": "generated",
+      "storageKey": "fixtures/geography-gis-satellite/asset-map-001.png",
+      "mimeType": "image/png",
+      "altText": "Satellite map with highlighted urban corridors"
+    }
+  ],
+  "captionCues": [
+    { "text": "STREET LEVEL", "startMs": 500, "endMs": 1800, "emphasis": "normal" },
+    { "text": "PATTERN LEVEL", "startMs": 2600, "endMs": 4700, "emphasis": "keyword" }
+  ],
+  "motion": ["pan", "parallax", "highlight"],
+  "audioTracks": [
+    {
+      "id": "voice-geography-001",
+      "kind": "voice",
+      "assetId": "audio-geography-001",
+      "startMs": 0,
+      "durationMs": 7000,
+      "volume": 1
+    },
+    {
+      "id": "sfx-geography-001",
+      "kind": "sfx",
+      "assetId": "sfx-map-ping",
+      "startMs": 3000,
+      "durationMs": 500,
+      "volume": 0.35
+    }
+  ],
+  "rendererHints": { "template": "gis-layer-reveal", "safeArea": "wide", "background": "#0B1020" }
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "scene-machine-001",
+  "index": 0,
+  "archetype": "MACHINE_TEARDOWN_PHYSICS",
+  "title": "What is inside the machine",
+  "narration": "A teardown turns an invisible mechanism into a sequence of understandable parts.",
+  "durationMs": 6500,
+  "visualAssets": [
+    {
+      "id": "asset-machine-001",
+      "kind": "image",
+      "source": "generated",
+      "storageKey": "fixtures/machine-teardown-physics/asset-machine-001.png",
+      "mimeType": "image/png",
+      "altText": "Exploded technical illustration of a compact machine"
+    }
+  ],
+  "captionCues": [
+    { "text": "PART 01", "startMs": 400, "endMs": 1300, "emphasis": "number" },
+    { "text": "MECHANISM", "startMs": 1800, "endMs": 3500, "emphasis": "keyword" }
+  ],
+  "motion": ["scale", "orbit", "slide", "highlight"],
+  "audioTracks": [
+    {
+      "id": "voice-machine-001",
+      "kind": "voice",
+      "assetId": "audio-machine-001",
+      "startMs": 0,
+      "durationMs": 6500,
+      "volume": 1
+    },
+    {
+      "id": "sfx-machine-001",
+      "kind": "sfx",
+      "assetId": "sfx-mechanical-click",
+      "startMs": 1900,
+      "durationMs": 450,
+      "volume": 0.4
+    }
+  ],
+  "rendererHints": {
+    "template": "mechanical-explode",
+    "safeArea": "tight",
+    "background": "#0B1020"
+  }
+}
