@@ -93,7 +93,7 @@ Seluruh aset disimpan dalam format **PNG transparan (RGBA)** di direktori:
 
 ## 5. Panduan Eksekusi untuk Opus 5.5 (HyperFrames Composition)
 
-Untuk merender video final di workspace HyperFrames (`renderer/`):
+Untuk merender video final di workspace HyperFrames (`packages/hyperframes/`):
 
 1. **Canvas Resolution:** `1080 x 1920` px (Portrait 9:16, 30 FPS).
 2. **GSAP Timeline Structure:**

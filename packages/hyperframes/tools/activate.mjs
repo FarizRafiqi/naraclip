@@ -66,8 +66,8 @@ const indexHtmlPath = path.join(rendererDir, 'index.html')
 
 if (!targetSlug || targetSlug === '--help') {
   console.log('Usage:')
-  console.log('  node renderer/tools/activate.mjs <slug>    Aktifkan konten untuk Studio preview')
-  console.log('  node renderer/tools/activate.mjs --reset   Kembalikan ke template kosong')
+  console.log('  node packages/hyperframes/tools/activate.mjs <slug>    Aktifkan konten untuk Studio preview')
+  console.log('  node packages/hyperframes/tools/activate.mjs --reset   Kembalikan ke template kosong')
   console.log('\nKonten yang tersedia:')
   const contentDir = path.join(rendererDir, 'content')
   if (fs.existsSync(contentDir)) {
@@ -86,7 +86,7 @@ if (targetSlug === '--reset') {
     fs.unlinkSync(indexHtmlPath)
   } catch {}
   fs.writeFileSync(indexHtmlPath, defaultHtmlContent, 'utf-8')
-  console.log('✅ renderer/index.html telah direset ke template default.')
+  console.log('✅ packages/hyperframes/index.html telah direset ke template default.')
   process.exit(0)
 }
 
@@ -105,4 +105,4 @@ fs.symlinkSync(relativeTarget, indexHtmlPath)
 
 console.log(`\n🎬 Konten aktif untuk HyperFrames Studio: [${targetSlug}]`)
 console.log(`👉 Buka dashboard: http://localhost:3002/#project/renderer`)
-console.log(`💡 Untuk mereset: node renderer/tools/activate.mjs --reset\n`)
+console.log(`💡 Untuk mereset: node packages/hyperframes/tools/activate.mjs --reset\n`)

@@ -2258,7 +2258,7 @@ naraclip/
 ├── apps/
 │   ├── web/
 │   ├── api/
-│   └── renderer/
+│   └── packages/hyperframes/
 │
 ├── packages/
 │   ├── ai/
@@ -2298,7 +2298,7 @@ naraclip/
 # 59. Renderer Package
 
 ```text
-apps/renderer/
+apps/packages/hyperframes/
 ├── compiler/
 ├── compositions/
 ├── runtime/

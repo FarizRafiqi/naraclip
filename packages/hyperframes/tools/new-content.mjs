@@ -3,7 +3,7 @@ import path from 'node:path'
 
 const [slug, ...titleParts] = process.argv.slice(2)
 if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-  console.error('Usage: node renderer/tools/new-content.mjs <lowercase-slug> [content title]')
+  console.error('Usage: node packages/hyperframes/tools/new-content.mjs <lowercase-slug> [content title]')
   process.exit(1)
 }
 
@@ -57,7 +57,7 @@ const readme = [
   '- Sumber audio dan visual: letakkan di assets/*/source/; simpan hasil edit/generasi di processed/ atau generated/.',
   '- Lisensi dan kredit publikasi: catat tautan serta perubahan di sini atau di dekat aset sumber.',
   '',
-  'Catat urutan audio aktual, timing akhir, keputusan revisi, versi export, dan hasil QC sebelum menetapkan exports/final.mp4. Ikuti docs/video-production-playbook.md di root repo.',
+  'Catat urutan audio aktual, timing akhir, keputusan revisi, versi export, dan hasil QC sebelum menetapkan exports/final.mp4. Ikuti docs/workflows/video-production-playbook.md di root repo.',
   '',
 ].join('\n')
 fs.writeFileSync(path.join(project, 'README.md'), readme)
@@ -83,7 +83,7 @@ const composition = [
 ].join('\n')
 fs.writeFileSync(path.join(project, 'composition.html'), composition)
 
-console.log('Created renderer/content/' + slug + '/')
+console.log('Created packages/hyperframes/content/' + slug + '/')
 console.log(
   'Add the script, assets, and timing data there; activate its composition only when ready to render.'
 )

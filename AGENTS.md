@@ -7,25 +7,25 @@ Repositori Git ini difokuskan murni untuk **Core Application & Shared Video Engi
 1. **Yang Bersifat UMUM (Tracked di Git):**
    - Core AdonisJS backend (`app/`, `config/`, `database/`, `start/`, dll.)
    - Inertia frontend (`inertia/`, dll.)
-   - Shared renderer tooling: `renderer/tools/new-content.mjs`, font bersama (`renderer/assets/fonts/`), dan library vendor (`renderer/assets/vendor/`).
+   - Shared renderer tooling: `packages/hyperframes/tools/new-content.mjs`, font bersama (`packages/hyperframes/assets/fonts/`), dan library vendor (`packages/hyperframes/assets/vendor/`).
    - Root `scripts/`: Khusus untuk skrip otomasi umum level aplikasi (bukan untuk satu video tertentu).
    - Global documentation (`docs/`, `AGENTS.md`, `README.md`).
 
 2. **Yang Bersifat KHUSUS / SPESIFIK KONTEN (Lokal & Gitignored):**
-   - Seluruh konten di `renderer/content/<slug>/` dan `public/content/<slug>/` bersifat lokal dan **tidak dipush ke Git**.
-   - Setiap kali membuat video baru (`node renderer/tools/new-content.mjs <slug> "<title>"`), simpan SEMUA hal yang berhubungan dengan video tersebut secara mandiri di dalam foldernya:
-     - `renderer/content/<slug>/scripts/`: Seluruh skrip khusus video (skrip build GSAP, mixing audio, ekstraksi layer cutout, transkripsi Whisper). **JANGAN PERNAH** menaruh skrip khusus video di root `scripts/`.
-     - `renderer/content/<slug>/assets/visuals/`: Layer gambar, cutout PNG, background.
-     - `renderer/content/<slug>/assets/audio/`: Rekaman narasi asli, BGM, SFX.
-     - `renderer/content/<slug>/data/`: Word timing JSON (`words.json`), edit timing JSON.
-     - `renderer/content/<slug>/composition.html`: Komposisi HyperFrames aktif video tersebut.
-     - `renderer/content/<slug>/previews/` & `exports/`: Hasil render dan snapshots.
+   - Seluruh konten di `packages/hyperframes/content/<slug>/` dan `public/content/<slug>/` bersifat lokal dan **tidak dipush ke Git**.
+   - Setiap kali membuat video baru (`node packages/hyperframes/tools/new-content.mjs <slug> "<title>"`), simpan SEMUA hal yang berhubungan dengan video tersebut secara mandiri di dalam foldernya:
+     - `packages/hyperframes/content/<slug>/scripts/`: Seluruh skrip khusus video (skrip build GSAP, mixing audio, ekstraksi layer cutout, transkripsi Whisper). **JANGAN PERNAH** menaruh skrip khusus video di root `scripts/`.
+     - `packages/hyperframes/content/<slug>/assets/visuals/`: Layer gambar, cutout PNG, background.
+     - `packages/hyperframes/content/<slug>/assets/audio/`: Rekaman narasi asli, BGM, SFX.
+     - `packages/hyperframes/content/<slug>/data/`: Word timing JSON (`words.json`), edit timing JSON.
+     - `packages/hyperframes/content/<slug>/composition.html`: Komposisi HyperFrames aktif video tersebut.
+     - `packages/hyperframes/content/<slug>/previews/` & `exports/`: Hasil render dan snapshots.
 
 ## Urutan Kerja Produksi Video
 
-- Selalu baca [the video production playbook](docs/video-production-playbook.md) dan spec konten sebelum memulai.
-- Buat struktur proyek standar dengan `node renderer/tools/new-content.mjs <slug> "<title>"` dari root repository.
-- Jalankan skrip build konten dari folder konten masing-masing. Jangan alihkan alias `renderer/index.html` sampai konten tersebut siap dirender, dan jangan commit alias dinamis ke Git.
+- Selalu baca [the video production playbook](docs/workflows/video-production-playbook.md) dan spec konten sebelum memulai.
+- Buat struktur proyek standar dengan `node packages/hyperframes/tools/new-content.mjs <slug> "<title>"` dari root repository.
+- Jalankan skrip build konten dari folder konten masing-masing. Jangan alihkan alias `packages/hyperframes/index.html` sampai konten tersebut siap dirender, dan jangan commit alias dinamis ke Git.
 - Pertahankan rekaman narasi asli dan lisensi sumber aset. Jangan pernah menambah kata pada caption yang tidak diucapkan pada rekaman.
 - Sebelum handoff video, jalankan HyperFrames lint dan visual inspection, verifikasi seluruh aset, dan decode MP4 final dengan FFmpeg.
 

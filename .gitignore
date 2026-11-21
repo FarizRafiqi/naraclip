@@ -16,9 +16,15 @@ out/
 .env
 .env.*
 !.env.example
+secrets/*
+!secrets/.gitkeep
+!secrets/README.md
+client_secret_*.json
 *.pem
 *.key
 *.cert
+*:Zone.Identifier
+*.Zone.Identifier
 
 # Runtime Data & Databases
 tmp/*
@@ -48,35 +54,35 @@ pnpm-debug.log*
 
 # Video Content Workspaces (Self-contained local video projects)
 # Aturan: Semua aset (visual, audio), data timing, skrip build/mix khusus konten,
-# serta hasil render disimpan lokal di dalam renderer/content/<slug>/ dan TIDAK di-push ke git.
-renderer/content/*
-!renderer/content/.gitkeep
+# serta hasil render disimpan lokal di dalam packages/hyperframes/content/<slug>/ dan TIDAK di-push ke git.
+packages/hyperframes/content/*
+!packages/hyperframes/content/.gitkeep
 public/content/*
 !public/content/.gitkeep
 
 # Media Binaries (Images, Audio, Cutouts)
-renderer/**/*.png
-renderer/**/*.jpg
-renderer/**/*.jpeg
-renderer/**/*.webp
-renderer/**/*.gif
-renderer/**/*.wav
-renderer/**/*.mp3
-renderer/**/*.m4a
-renderer/**/*.ogg
-renderer/**/*.flac
-renderer/**/*.aac
+packages/hyperframes/**/*.png
+packages/hyperframes/**/*.jpg
+packages/hyperframes/**/*.jpeg
+packages/hyperframes/**/*.webp
+packages/hyperframes/**/*.gif
+packages/hyperframes/**/*.wav
+packages/hyperframes/**/*.mp3
+packages/hyperframes/**/*.m4a
+packages/hyperframes/**/*.ogg
+packages/hyperframes/**/*.flac
+packages/hyperframes/**/*.aac
 
 # Renderer Dynamic Aliases & Output Links
-renderer/scripts
-renderer/snapshots
-renderer/*.mp4
-renderer/output_*.mp4
-renderer/assets/*
-!renderer/assets/fonts/
-!renderer/assets/fonts/**
-!renderer/assets/vendor/
-!renderer/assets/vendor/**
+packages/hyperframes/scripts
+packages/hyperframes/snapshots
+packages/hyperframes/*.mp4
+packages/hyperframes/output_*.mp4
+packages/hyperframes/assets/*
+!packages/hyperframes/assets/fonts/
+!packages/hyperframes/assets/fonts/**
+!packages/hyperframes/assets/vendor/
+!packages/hyperframes/assets/vendor/**
 
 # Python
 __pycache__/
@@ -115,3 +121,15 @@ desktop.ini
 .claude/*
 !.claude/CLAUDE.md
 .claude.json
+
+# Pipeline content workspaces (engine-agnostic): content/<slug>/
+content/*
+!content/.gitkeep
+
+# Local render caches & Rust binary artifacts
+.cache/
+packages/fast-renderer/target/
+packages/hyperframes/.waveform-cache/
+packages/hyperframes/.thumbnails/
+packages/*/tmp/
+packages/remotion/public/voices/

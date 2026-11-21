@@ -8,7 +8,7 @@ services:
     ports:
       - '${PORT:-3333}:3333'
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3333
       HOST: 0.0.0.0
       APP_KEY: ${APP_KEY}
@@ -22,7 +22,8 @@ services:
       DB_DATABASE: ${DB_DATABASE:-naraclip}
       REDIS_URL: redis://redis:6379
       QUEUE_PREFIX: naraclip
-      # Object Storage (MinIO S3)
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      # S3 / MinIO / R2 credentials (aktif bila STORAGE_DRIVER=s3)
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
       MINIO_REGION: ${MINIO_REGION:-us-east-1}
       MINIO_BUCKET: ${MINIO_BUCKET:-naraclip}
@@ -30,13 +31,18 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-naraclipsecret}
       MINIO_CONSOLE_PORT: ${MINIO_CONSOLE_PORT:-9001}
       MINIO_SIGNED_URL_TTL_SECONDS: ${MINIO_SIGNED_URL_TTL_SECONDS:-900}
+      MAX_RENDER_CONCURRENCY: ${MAX_RENDER_CONCURRENCY:-1}
+    volumes:
+      - ./storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEM_LIMIT:-1536M}
     networks:
       - naraclip-net
 
@@ -48,15 +54,26 @@ services:
       POSTGRES_USER: ${DB_USER:-naraclip}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-naraclip_secret}
       POSTGRES_DB: ${DB_DATABASE:-naraclip}
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=30
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - '${DB_PORT:-5432}:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-naraclip} -d ${DB_DATABASE:-naraclip}']
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: ${PG_MEM_LIMIT:-384M}
     networks:
       - naraclip-net
 
@@ -64,15 +81,20 @@ services:
     image: redis:7-alpine
     container_name: naraclip-redis
     restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save "" --appendonly no
     volumes:
       - redisdata:/data
     ports:
       - '6379:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEM_LIMIT:-256M}
     networks:
       - naraclip-net
 
@@ -80,6 +102,8 @@ services:
     image: cgr.dev/chainguard/minio:latest
     container_name: naraclip-minio
     restart: unless-stopped
+    profiles:
+      - minio # Hanya dijalankan bila dipanggil eksplisit via `docker compose --profile minio up`
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-naraclipadmin}
@@ -89,6 +113,10 @@ services:
     ports:
       - '9000:9000' # S3 API
       - '${MINIO_CONSOLE_PORT:-9001}:9001' # Web UI Console
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     networks:
       - naraclip-net
 

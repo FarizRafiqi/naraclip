@@ -4,23 +4,23 @@ Panduan ini mencatat workflow HyperFrames dan preferensi visual/audio yang sudah
 
 ## Stack dan format dasar
 
-- Workspace renderer: `renderer/`, HyperFrames 0.8.4, GSAP 3.14.2, Node.js 24, pnpm 10.
+- Workspace renderer: `packages/hyperframes/`, HyperFrames 0.8.4, GSAP 3.14.2, Node.js 24, pnpm 10.
 - Format Shorts: portrait 9:16, 1080 × 1920, 30 fps. Durasi mengikuti audio final; jangan memanjangkan narasi hanya untuk memenuhi angka durasi rencana.
 - Rendering dan inspeksi: `npx --no-install hyperframes lint`, `check`, `snapshot`, lalu `render`. Gunakan FFmpeg/FFprobe untuk pemeriksaan media.
-- Aset bersama renderer, seperti font Outfit dan GSAP, tinggal di `renderer/assets/`. Semua aset dan output khusus konten tinggal di `renderer/content/<slug>/`.
+- Aset bersama renderer, seperti font Outfit dan GSAP, tinggal di `packages/hyperframes/assets/`. Semua aset dan output khusus konten tinggal di `packages/hyperframes/content/<slug>/`.
 
 ## Struktur per konten
 
 Gunakan slug kecil dan stabil, misalnya `pedas-capsaicin`:
 
 ```sh
-node renderer/tools/new-content.mjs kenapa-langit-biru "Kenapa Langit Berwarna Biru?"
+node packages/hyperframes/tools/new-content.mjs kenapa-langit-biru "Kenapa Langit Berwarna Biru?"
 ```
 
 Jalankan dari root repository. Scaffold membuat README, komposisi HyperFrames kosong, serta semua folder sumber, hasil proses, preview, dan export. Jangan alihkan alias komposisi aktif sampai project baru siap dirender.
 
 ```text
-renderer/content/<slug>/
+packages/hyperframes/content/<slug>/
   README.md                 catatan, timeline, keputusan, lisensi, hasil QC
   composition.html          sumber komposisi HyperFrames
   data/                     transkrip, word timing, edit timing, shot list
@@ -41,9 +41,9 @@ renderer/content/<slug>/
 
 ### Konvensi Git & Isolasi Konten
 
-- **Core Repository vs Content Workspaces:** Repositori Git hanya melacak core application (AdonisJS, Inertia, tools umum, shared assets font/vendor, dokumentasi). Folder konten `renderer/content/<slug>/` dan `public/content/<slug>/` diperlakukan sebagai **self-contained local workspaces** dan di-ignore dari Git agar repo tetap ringan.
-- **Skrip Khusus Video:** Semua skrip otomasi yang spesifik untuk satu video (build GSAP, mix audio, ekstraksi cutout, transkripsi Whisper) **harus disimpan di dalam `renderer/content/<slug>/scripts/`**, bukan di root `scripts/`. Root `scripts/` hanya untuk otomasi umum level aplikasi.
-- `renderer/index.html`, `renderer/scripts`, `renderer/snapshots`, dan `renderer/output_*.mp4` adalah alias dinamis lokal untuk project yang sedang aktif dirender. Jangan commit alias ini ke Git; biarkan `renderer/index.html` di repo mengarah pada template dasar.
+- **Core Repository vs Content Workspaces:** Repositori Git hanya melacak core application (AdonisJS, Inertia, tools umum, shared assets font/vendor, dokumentasi). Folder konten `packages/hyperframes/content/<slug>/` dan `public/content/<slug>/` diperlakukan sebagai **self-contained local workspaces** dan di-ignore dari Git agar repo tetap ringan.
+- **Skrip Khusus Video:** Semua skrip otomasi yang spesifik untuk satu video (build GSAP, mix audio, ekstraksi cutout, transkripsi Whisper) **harus disimpan di dalam `packages/hyperframes/content/<slug>/scripts/`**, bukan di root `scripts/`. Root `scripts/` hanya untuk otomasi umum level aplikasi.
+- `packages/hyperframes/index.html`, `packages/hyperframes/scripts`, `packages/hyperframes/snapshots`, dan `packages/hyperframes/output_*.mp4` adalah alias dinamis lokal untuk project yang sedang aktif dirender. Jangan commit alias ini ke Git; biarkan `packages/hyperframes/index.html` di repo mengarah pada template dasar.
 
 ## Urutan kerja
 
@@ -79,7 +79,7 @@ renderer/content/<slug>/
 
 ## Perintah renderer
 
-Jalankan dari `renderer/`:
+Jalankan dari `packages/hyperframes/`:
 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
@@ -92,3 +92,7 @@ npx --no-install hyperframes render --fps 30 --quality high --workers 4 -o conte
 ```
 
 Sesuaikan slug, timestamp, dan nomor versi untuk konten berikutnya. Jangan render ke nama versi yang sudah ada. Saat merender project baru, pastikan entrypoint HyperFrames menunjuk ke komposisi yang sedang dikerjakan.
+
+## Panduan Channel 2 (Remotion Dev Explainer)
+
+Untuk produksi video Channel 2 berbasis Remotion (`content/<slug>/`), baca [panduan motion & anti-slop Channel 2](channel2-motion-and-antislop-guide.md) serta [DESIGN.md](../../packages/remotion/DESIGN.md) sebelum menyusun `storyboard.json` agar sinkronisasi kata, safe-margin kamera (`x: 0` untuk diagram lebar), split-stage workbench kode/terminal, dan multi-cue SFX terjaga konsisten.

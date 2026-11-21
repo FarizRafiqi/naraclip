@@ -434,12 +434,12 @@ Untuk memproduksi video berdasarkan naskah di atas:
 
 1. **Scaffold:**
    ```bash
-   node renderer/tools/new-content.mjs <slug> "<Judul Singkat>"
+   node packages/hyperframes/tools/new-content.mjs <slug> "<Judul Singkat>"
    ```
 2. **Karakteristik Voice-Over:**
    - Nada bicara: Rileks, sedikit rendah (_chest voice_), tidak terburu-buru, jangan bernada seperti sales iklan atau YouTuber anak-anak.
    - Pacing: **2.3 hingga 2.5 kata per detik** (total durasi VO mentah: 29.5 - 33.0 detik).
-   - Simpan audio asli di: `renderer/content/<slug>/assets/audio/source/voice/`.
+   - Simpan audio asli di: `packages/hyperframes/content/<slug>/assets/audio/source/voice/`.
 3. **Karakteristik Visual & Animasi (GSAP):**
    - 4 sampai 6 pose stop-motion cutout untuk subjek utama, berganti setiap beat narasi (rata-rata tiap 3–5 detik).
    - Parallax drift lambat pada background plate (`scale: 1.0 -> 1.08`).

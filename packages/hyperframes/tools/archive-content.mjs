@@ -1,10 +1,10 @@
 // Archive a finished video workspace so only the final result stays open.
-//   node renderer/tools/archive-content.mjs <slug> [--shorts-dir <dir>] [--prune]
+//   node packages/hyperframes/tools/archive-content.mjs <slug> [--shorts-dir <dir>] [--prune]
 // 1. copies final master (+ .srt, README, description) to <shorts-dir>/05_export
 // 2. packs everything non-rebuildable into <shorts-dir>/archive/<slug>-src.tar.xz (symlinks stay links)
 // 3. verifies the archive (list + sha256) and writes a restore note
 // 4. with --prune (only after step 3 passed): deletes rebuildable folders from the workspace
-// Restore: node renderer/tools/restore-content.mjs <slug> [--shorts-dir <dir>]
+// Restore: node packages/hyperframes/tools/restore-content.mjs <slug> [--shorts-dir <dir>]
 // xz is used because zstd is not installed (sudo needed); swap to `tar --zstd` once available.
 import fs from 'node:fs'
 import path from 'node:path'
@@ -16,8 +16,8 @@ const slug = args.find((a) => !a.startsWith('--'))
 if (!slug) throw new Error('usage: archive-content.mjs <slug> [--shorts-dir dir] [--prune]')
 const flag = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : null)
 const prune = args.includes('--prune')
-const root = path.resolve(import.meta.dirname, '../..')
-const content = path.join(root, 'renderer/content', slug)
+const hyperframesDir = path.resolve(import.meta.dirname, '..')
+const content = path.join(hyperframesDir, 'content', slug)
 if (!fs.existsSync(content)) throw new Error(`no workspace: ${content}`)
 
 const SHORTS = '/mnt/d/Projects/Shorts'
@@ -74,7 +74,7 @@ const EXCLUDE = [
 const tarPath = path.join(archiveDir, `${slug}-src.tar.xz`)
 sh('tar', [
   '-C',
-  path.join(root, 'renderer/content'),
+  path.join(hyperframesDir, 'content'),
   '-cJf',
   tarPath,
   ...EXCLUDE.map((e) => `--exclude=${slug}/${e}`),
@@ -90,7 +90,7 @@ console.log(
 )
 fs.writeFileSync(
   path.join(archiveDir, 'RESTORE.md'),
-  `# Restore ${slug}\n\n\`node renderer/tools/restore-content.mjs ${slug}\`\n\nThen rebuild derived files (steps depend on the video; see renderer/content/${slug}/README.md):\n1. run the prep script(s) in renderer/content/${slug}/scripts/ (e.g. prep_visuals.py) if present\n2. run the build script in renderer/content/${slug}/scripts/ (it writes composition.html and the processed audio)\n3. render and master as described in the video README.\n\nSymlinks inside the archive point at ${shortsDir}; keep that folder in place.\n`
+  `# Restore ${slug}\n\n\`node packages/hyperframes/tools/restore-content.mjs ${slug}\`\n\nThen rebuild derived files (steps depend on the video; see packages/hyperframes/content/${slug}/README.md):\n1. run the prep script(s) in packages/hyperframes/content/${slug}/scripts/ (e.g. prep_visuals.py) if present\n2. run the build script in packages/hyperframes/content/${slug}/scripts/ (it writes composition.html and the processed audio)\n3. render and master as described in the video README.\n\nSymlinks inside the archive point at ${shortsDir}; keep that folder in place.\n`
 )
 
 // 3. prune

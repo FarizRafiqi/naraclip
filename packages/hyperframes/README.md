@@ -1,12 +1,12 @@
 # HyperFrames workspace
 
-Workspace renderer NaraClip menggunakan HyperFrames 0.8.4, GSAP 3.14.2, Node.js 24, dan FFmpeg. Panduan untuk konten berikutnya ada di [`../docs/video-production-playbook.md`](../docs/video-production-playbook.md); ringkasan proyek aktif ada di [`content/pedas-capsaicin/README.md`](content/pedas-capsaicin/README.md).
+Workspace renderer NaraClip menggunakan HyperFrames 0.8.4, GSAP 3.14.2, Node.js 24, dan FFmpeg. Panduan untuk konten berikutnya ada di [`../docs/workflows/video-production-playbook.md`](../../docs/workflows/video-production-playbook.md); ringkasan proyek aktif ada di [`content/pedas-capsaicin/README.md`](content/pedas-capsaicin/README.md).
 
 ## Organisasi
 
 Setiap video memiliki folder sendiri di `content/<slug>/`, mencakup sumber komposisi, data caption/timing, skrip build, aset audio/visual, snapshot review, dan export. Aset bersama saja yang berada di `assets/fonts/` dan `assets/vendor/`.
 
-Buat folder baru dari root repository dengan `node renderer/tools/new-content.mjs <slug> "<title>"`.
+Buat folder baru dari root repository dengan `node packages/hyperframes/tools/new-content.mjs <slug> "<title>"`.
 
 Untuk kompatibilitas workspace aktif, `index.html`, `scripts/`, `snapshots/`, `assets/pedas-capsaicin/`, dan `output_pedas_capsaicin*.mp4` menunjuk ke `content/pedas-capsaicin/`. File sumber komposisi adalah `content/pedas-capsaicin/composition.html`; jangan menaruh aset baru di alias lama.
 Skrip build harus menulis ke `content/<slug>/composition.html`. Alihkan symlink `index.html` hanya saat memilih project yang siap dirender.

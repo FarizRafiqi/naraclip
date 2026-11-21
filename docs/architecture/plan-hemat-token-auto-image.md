@@ -6,8 +6,8 @@ Status: diperbarui 2026-10-09 setelah keputusan "jalur utama = web Gemini via `g
 
 | Bagian                                                                                       | Status                                                                                                     |
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `renderer/tools/imagegen/imagegen.py` — `generate` (gemini_webapi), `pack` (manual), `check` | Ditulis. `pack` dan `generate --dry-run` diuji; **`generate` belum pernah dijalankan dengan cookie asli**. |
-| `renderer/tools/archive-content.mjs` + `restore-content.mjs`                                 | Ditulis dan diuji pada pedas-capsaicin (arsip + restore + checksum). Belum dijalankan dengan `--prune`.    |
+| `packages/hyperframes/tools/imagegen/imagegen.py` — `generate` (gemini_webapi), `pack` (manual), `check` | Ditulis. `pack` dan `generate --dry-run` diuji; **`generate` belum pernah dijalankan dengan cookie asli**. |
+| `packages/hyperframes/tools/archive-content.mjs` + `restore-content.mjs`                                 | Ditulis dan diuji pada pedas-capsaicin (arsip + restore + checksum). Belum dijalankan dengan `--prune`.    |
 | `image-jobs.json` pedas-capsaicin (16 job)                                                   | Ada, sebagai catatan prompt yang sudah dipakai.                                                            |
 | Backend cadangan #2–#4 (port TypeScript, Playwright)                                         | **Belum dibuat.** Satu-satunya cadangan yang ada sekarang: `pack` manual.                                  |
 | Kit bersama, `measure.py`, `qa.mjs` (hemat token)                                            | **Belum dibuat.**                                                                                          |
@@ -56,7 +56,7 @@ Di aplikasi NaraClip, rute image default tetap **`svg-local`** (placeholder tanp
 
 | Pemborosan yang terjadi                                                   | Perbaikan (belum dikerjakan)                                                                                                                                                                 |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build script ±700 baris ditulis ulang per video                           | Kit bersama `renderer/tools/vinconium-kit.mjs` (charW, prop, label, arrowTo, steam, embers, swap, camPush, SFX synth, narasi, caption, BGM). Per video cukup shot list ±150 baris.           |
+| Build script ±700 baris ditulis ulang per video                           | Kit bersama `packages/hyperframes/tools/vinconium-kit.mjs` (charW, prop, label, arrowTo, steam, embers, swap, camPush, SFX synth, narasi, caption, BGM). Per video cukup shot list ±150 baris.           |
 | Banyak membaca gambar grid untuk mengukur koordinat                       | `measure.py`: bbox alpha, deteksi mata googly, crop props, tepi meja → `data/measurements.json`. Claude membaca angka, bukan gambar.                                                         |
 | Iterasi snapshot berkali-kali untuk cacat yang bisa dicek mesin           | `qa.mjs` satu perintah: lint, check, alpha leak, black detect, caption cps/overlap, true peak, elemen keluar frame → laporan teks. Gambar hanya satu contact sheet resolusi rendah di akhir. |
 | Pelajaran (mata bocor, defringe, TP AAC, symlink D:) diturunkan ulang     | Masukkan ke SKILL.md vinconium-short dan skrip templat (`prep_visuals.py`, `make_srt_en.mjs`, `master.mjs`).                                                                                 |
@@ -74,9 +74,9 @@ Sisa untuk menutup fase ini: jalankan `imagegen.py check` lalu `generate --limit
 
 ### Fase 1 — Kit & QA (hemat token; tanpa GPU)
 
-1. Ekstrak helper dari `build-pedas.mjs` ke `renderer/tools/vinconium-kit.mjs`.
+1. Ekstrak helper dari `build-pedas.mjs` ke `packages/hyperframes/tools/vinconium-kit.mjs`.
 2. Ubah build pedas jadi pemakai kit; hasil render harus identik secara visual dengan v6.
-3. `renderer/tools/measure.py` dan `renderer/tools/qa.mjs`.
+3. `packages/hyperframes/tools/measure.py` dan `packages/hyperframes/tools/qa.mjs`.
 4. Perbarui SKILL.md vinconium-short.
 
 - **Selesai bila:** rebuild pedas lewat kit → lint 0 error, `qa.mjs` hijau, snapshot sama dengan v6.
@@ -92,7 +92,7 @@ Sisa untuk menutup fase ini: jalankan `imagegen.py check` lalu `generate --limit
 ### Fase 3 — ComfyUI lokal (opsional; hanya bila diputuskan)
 
 1. Pasang ComfyUI portable di Windows + node GGUF + RMBG/BiRefNet; akses dari WSL via localhost (networking mirrored) atau IP host.
-2. Workflow API di `renderer/tools/comfy-workflows/` (`prop`, `background`, `pose-from-ref`, `cutout`).
+2. Workflow API di `packages/hyperframes/tools/comfy-workflows/` (`prop`, `background`, `pose-from-ref`, `cutout`).
 3. `ComfyUiImageProvider` mendukung workflow per `kind`; `ImageGenerationInput` ditambah `referenceImages` dan `background`.
 4. Uji: generate ulang 10 props + 3 pose pedas-capsaicin, bandingkan berdampingan dengan hasil Gemini.
 
@@ -100,7 +100,7 @@ Sisa untuk menutup fase ini: jalankan `imagegen.py check` lalu `generate --limit
 
 ### Fase 4 — Ukur
 
-Produksi satu video baru dari `docs/ide-konten-niche-vinconium.md` memakai pipeline baru; catat jumlah gambar per backend, waktu, iterasi render, dan pembacaan gambar.
+Produksi satu video baru dari `docs/content-research/ide-konten-niche-vinconium.md` memakai pipeline baru; catat jumlah gambar per backend, waktu, iterasi render, dan pembacaan gambar.
 
 ## 5. Risiko
 
@@ -131,11 +131,11 @@ Masih terbuka:
 
 Ukuran pedas-capsaicin sebelum prune: exports 348 MB (v1–v6 + master), previews 139 MB, source 63 MB, audio 39 MB, generated 28 MB, processed 24 MB. Penghematan terbesar = **membuang yang bisa dibuat ulang**, bukan kompresi (PNG/MP4 sudah terkompres).
 
-`node renderer/tools/archive-content.mjs <slug> [--shorts-dir <dir>] [--prune]`, setelah video final:
+`node packages/hyperframes/tools/archive-content.mjs <slug> [--shorts-dir <dir>] [--prune]`, setelah video final:
 
 1. Final (MP4 master dan `.srt`) dan README disalin ke `<shorts-dir>/05_export/`.
 2. Semua yang tidak bisa dibangun ulang dikemas ke `<shorts-dir>/archive/<slug>-src.tar.xz` (symlink tetap berupa symlink; sumber gambar/VO yang sudah ada di D: tidak digandakan), beserta `.sha256` dan `RESTORE.md`. Arsip diverifikasi (daftar isi + checksum).
 3. Dengan `--prune` (dan hanya setelah arsip lolos verifikasi) folder turunan dihapus: `previews/`, `assets/visuals/processed/`, `assets/audio/processed/`, `assets/visuals/generated/background/`, serta hasil render lama selain final.
-4. `node renderer/tools/restore-content.mjs <slug> [--shorts-dir <dir>] [--into <dir>]` memverifikasi checksum lalu membongkar arsip; build dan render dijalankan ulang sesuai `RESTORE.md`.
+4. `node packages/hyperframes/tools/restore-content.mjs <slug> [--shorts-dir <dir>] [--into <dir>]` memverifikasi checksum lalu membongkar arsip; build dan render dijalankan ulang sesuai `RESTORE.md`.
 
 Hasil uji pada pedas-capsaicin: arsip 16 MB (karena sumber besar sudah di D: lewat symlink), restore ke folder uji berhasil. Format `tar.xz` dipakai karena `zstd` belum terpasang (butuh sudo); ganti ke `tar --zstd` bila sudah ada.

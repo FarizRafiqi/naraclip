@@ -1,13 +1,13 @@
 """NaraClip image generation runner (lane: web Gemini via cookies, + manual prompt pack).
 
 Usage (from repo root):
-  uv run --python 3.13 --with gemini_webapi python renderer/tools/imagegen/imagegen.py generate <slug> [--only id,id] [--limit N] [--delay 8-20]
-  uv run --python 3.13 python renderer/tools/imagegen/imagegen.py pack <slug>        # prompts to paste into gemini.google.com by hand
-  uv run --python 3.13 python renderer/tools/imagegen/imagegen.py check              # verify cookies/account only
+  uv run --python 3.13 --with gemini_webapi python packages/hyperframes/tools/imagegen/imagegen.py generate <slug> [--only id,id] [--limit N] [--delay 8-20]
+  uv run --python 3.13 python packages/hyperframes/tools/imagegen/imagegen.py pack <slug>        # prompts to paste into gemini.google.com by hand
+  uv run --python 3.13 python packages/hyperframes/tools/imagegen/imagegen.py check              # verify cookies/account only
 
-Jobs live in renderer/content/<slug>/data/image-jobs.json (see schema in templates.json).
+Jobs live in packages/hyperframes/content/<slug>/data/image-jobs.json (see schema in templates.json).
 Output: raw images -> the content's inbox dir (default: D:\\Projects\\Shorts\\<NN_slug>\\02_images\\generated-raw),
-manifest -> renderer/content/<slug>/data/imagegen-manifest.json. Existing outputs are skipped (cache).
+manifest -> packages/hyperframes/content/<slug>/data/imagegen-manifest.json. Existing outputs are skipped (cache).
 
 Auth: cookies __Secure-1PSID / __Secure-1PSIDTS from a LOGGED-IN gemini.google.com session, stored in
 ~/.config/naraclip/gemini.env (chmod 600):
@@ -30,7 +30,7 @@ import time
 from datetime import date
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+HYPERFRAMES_DIR = Path(__file__).resolve().parents[2]
 TEMPLATES = json.loads((Path(__file__).parent / 'templates.json').read_text())
 ENV_FILE = Path.home() / '.config/naraclip/gemini.env'
 DAILY_CAP = int(os.environ.get('NARACLIP_IMAGE_DAILY_CAP', '30'))
@@ -38,7 +38,7 @@ STATE_FILE = Path.home() / '.config/naraclip/imagegen-usage.json'
 
 
 def content_dir(slug: str) -> Path:
-    d = ROOT / 'renderer/content' / slug
+    d = HYPERFRAMES_DIR / 'content' / slug
     if not d.is_dir():
         sys.exit(f'content not found: {d}')
     return d

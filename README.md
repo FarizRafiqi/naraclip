@@ -45,7 +45,7 @@ terpisah karena bertanggung jawab atas komposisi dan rendering video.
                           │ shared contracts
              ┌────────────┴────────────┐
              │                         │
-      packages/contracts          renderer/
+      packages/contracts          packages/hyperframes/
       Zod schemas & fixtures      HyperFrames 0.8.4
 ```
 
@@ -59,7 +59,7 @@ terpisah karena bertanggung jawab atas komposisi dan rendering video.
 | Database          | PostgreSQL for production, SQLite for local smoke tests |
 | Object storage    | Cloudflare R2 through the S3 SDK                        |
 | Video composition | HyperFrames 0.8.4                                       |
-| Workspace         | pnpm 10 with `renderer/` and `packages/contracts/`      |
+| Workspace         | pnpm 10 with `packages/hyperframes/` and `packages/contracts/`      |
 
 ## Project structure
 
@@ -70,7 +70,7 @@ config/              application, database, auth, Inertia, and Vite config
 database/            Lucid migrations, seeders, and generated schema
 inertia/             React pages, layouts, and frontend entrypoints
 packages/contracts/  versioned SceneSpec, RenderSpec, and provider contracts
-renderer/            HyperFrames workspace and per-video projects in content/<slug>/
+packages/hyperframes/            HyperFrames workspace and per-video projects in content/<slug>/
 docs/                 product notes, specifications, and the video-production playbook
 resources/           Inertia HTML shell
 start/               routes, environment, and application kernel
@@ -122,7 +122,7 @@ Start the HyperFrames workspace separately when working on compositions:
 pnpm dev:renderer
 ```
 
-Follow the [video production playbook](docs/video-production-playbook.md) when creating or revising video content.
+Follow the [video production playbook](docs/workflows/video-production-playbook.md) when creating or revising video content.
 
 ## Useful commands
 
@@ -146,7 +146,7 @@ Follow the [video production playbook](docs/video-production-playbook.md) when c
 - R2 objects use safe scoped keys and private-bucket access through signed URLs.
 - Provider secrets are loaded from environment variables and are never sent to the frontend.
 
-See the [database normalization notes](docs/database-normalization.md) for the schema decisions.
+See the [database normalization notes](docs/architecture/database-normalization.md) for the schema decisions.
 
 ## Current focus
 
