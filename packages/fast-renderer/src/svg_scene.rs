@@ -402,6 +402,24 @@ fn render_prepared_svg(
     let arc_y = arc_t * 215.0 - (arc_t * std::f64::consts::PI).sin() * 115.0;
     let draw_dash = interpolate(lf, 8.0, 36.0, 900.0, 0.0, easing_out_cubic);
 
+    let vm1_f = cue_ms("c-vm1", 1933.0);
+    let cnt_f = cue_ms("c-cnt", 4000.0);
+    let tilt_down = remotion_spring(lf - vm1_f, fps, 11.0, 150.0, 0.9);
+    let tilt_win = remotion_spring(lf - cnt_f, fps, 11.0, 165.0, 0.7);
+    let seesaw_deg = if lf < vm1_f { -3.0 } else { -3.0 - tilt_down * 11.0 + tilt_win * 6.0 };
+
+    let cube_f = cue_ms("c-docker", 3000.0);
+    let cube_p = remotion_spring(lf - cube_f, fps, 12.0, 140.0, 0.75);
+    let cube_rot = if lf < cube_f { -90.0 } else { interpolate(cube_p, 0.0, 1.0, -180.0, 0.0, linear) };
+    let cube_sc = if lf < cube_f { 0.3 } else { interpolate(cube_p, 0.0, 1.0, 0.4, 1.0, linear) };
+    let cube_op = if lf < cube_f { 0.0 } else { (cube_p * 2.0).min(1.0) };
+
+    let odo_f = cue_ms("c-2013", 4160.0);
+    let odo_y = interpolate(lf, odo_f, odo_f + 16.0, 90.0, 0.0, easing_out_cubic);
+
+    let wave1_x = (lf / 16.0).sin() * 20.0;
+    let wave2_x = (lf / 13.0).cos() * 24.0;
+
     let mut body = String::with_capacity(8192);
     let _ = prep.inner_body_only;
     for piece in &prep.pieces {
@@ -450,6 +468,11 @@ fn render_prepared_svg(
                         "flow" => { dash_offset = Some(flow_dash); }
                         "draw" => { add_dasharray = !has_dasharray; dash_offset = Some(draw_dash); }
                         "float" => { ty = float_y; }
+                        "seesaw" => { deg = seesaw_deg; }
+                        "cube-spin" => { deg = cube_rot; sx = cube_sc; sy = cube_sc; opacity = Some(cube_op); }
+                        "odometer" => { ty = odo_y; }
+                        "wave-1" => { tx = wave1_x; }
+                        "wave-2" => { tx = wave2_x; }
                         "pulse" => { sx = pulse_scale; sy = pulse_scale; }
                         "led-blink" => { opacity = Some(if local_frame % 18 < 10 { 1.0 } else { 0.35 }); }
                         "shake" => { let (o, x, y, s) = stamp_at(46.0); opacity = Some(o); tx = x; ty = y; sx = s; sy = s; }
