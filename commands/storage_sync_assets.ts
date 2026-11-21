@@ -87,6 +87,17 @@ export default class StorageSyncAssets extends BaseCommand {
       }
     }
 
+    // Hapus data workspace yang sudah dihapus dari S3 (docker-bekal, test workspaces)
+    const deletedCount = await WorkspaceAsset.query()
+      .whereIn('workspace_slug', ['docker-bekal', 'test-redis-fast', 'test-runner-flow', 'test-vinc-flow'])
+      .orWhere('storage_key', 'like', '%test%')
+      .orWhere('storage_key', 'like', '%docker-bekal%')
+      .delete()
+
+    if (deletedCount[0] > 0) {
+      this.logger.info(`Menghapus ${deletedCount[0]} aset kedaluwarsa dari tabel workspace_assets.`)
+    }
+
     this.logger.success(`Selesai! Ditambahkan: ${insertedCount}, Diperbarui: ${updatedCount}`)
   }
 }
