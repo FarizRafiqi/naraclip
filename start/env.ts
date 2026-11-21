@@ -35,7 +35,16 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_POOL_MIN: Env.schema.number.optional(),
   DB_POOL_MAX: Env.schema.number.optional(),
 
-  // Storage (MinIO S3)
+  // Storage (SeaweedFS / Garage / S3 & Local Fallback)
+  STORAGE_DRIVER: Env.schema.enum(['s3', 'local'] as const),
+  S3_ENDPOINT: Env.schema.string.optional(),
+  S3_REGION: Env.schema.string.optional(),
+  S3_BUCKET: Env.schema.string.optional(),
+  S3_KEY: Env.schema.string.optional(),
+  S3_SECRET: Env.schema.secret.optional(),
+  S3_SIGNED_URL_TTL_SECONDS: Env.schema.number.optional(),
+
+  // Storage (Legacy MinIO S3)
   MINIO_ENDPOINT: Env.schema.string.optional(),
   MINIO_REGION: Env.schema.string.optional(),
   MINIO_BUCKET: Env.schema.string.optional(),

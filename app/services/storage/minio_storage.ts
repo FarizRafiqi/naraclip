@@ -1,38 +1,20 @@
 import {
-  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
-  HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
-  type PutObjectCommandInput,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import S3Storage, {
+  type S3StorageOptions,
+  type StorageAssetHead,
+  type StorageUploadInput,
+} from './s3_storage.js'
 import env from '#start/env'
 
-export type StorageUploadInput = {
-  key: string
-  body: NonNullable<PutObjectCommandInput['Body']>
-  contentType: string
-  byteSize?: number
-  checksumSha256?: string
-  metadata?: Record<string, string>
-}
-
-export type StorageAssetHead = {
-  key: string
-  contentType: string | undefined
-  byteSize: number | undefined
-  etag: string | undefined
-  metadata: Record<string, string>
-}
-
-export type MinioStorageOptions = {
-  client?: S3Client
-  bucket?: string
-  signedUrlTtlSeconds?: number
-}
+export type { StorageUploadInput, StorageAssetHead }
+export type MinioStorageOptions = S3StorageOptions
 
 const SAFE_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 const SUPPORTED_MIME_TYPE = /^(?:image\/[a-z0-9.+-]+|audio\/[a-z0-9.+-]+|video\/(?:mp4|webm))$/i
@@ -56,18 +38,24 @@ function assertSupportedMimeType(contentType: string) {
   }
 }
 
-export default class MinioStorage {
-  private readonly client: S3Client
-  private readonly bucket: string
-  private readonly signedUrlTtlSeconds: number
+/**
+ * MinioStorage is maintained for backward compatibility.
+ * It delegates to the generic S3Storage engine (SeaweedFS / Garage / S3 / Local Drive).
+ */
+export default class MinioStorage extends S3Storage {
+  private readonly rawClient: S3Client
+  private readonly rawBucket: string
+  private readonly rawSignedUrlTtlSeconds: number
 
   constructor(options: MinioStorageOptions = {}) {
-    const endpoint = env.get('MINIO_ENDPOINT')
-    const accessKeyId = env.get('MINIO_ACCESS_KEY')
-    const secretAccessKey = env.get('MINIO_SECRET_KEY')?.release()
-    const region = env.get('MINIO_REGION', 'us-east-1')
+    super(options)
+    const endpoint = env.get('S3_ENDPOINT') ?? env.get('MINIO_ENDPOINT')
+    const accessKeyId = env.get('S3_KEY') ?? env.get('MINIO_ACCESS_KEY')
+    const secretAccessKey =
+      env.get('S3_SECRET') ?? env.get('MINIO_SECRET_KEY')?.release()
+    const region = env.get('S3_REGION') ?? env.get('MINIO_REGION', 'us-east-1')
 
-    this.client =
+    this.rawClient =
       options.client ??
       new S3Client({
         endpoint,
@@ -76,9 +64,11 @@ export default class MinioStorage {
         forcePathStyle: true,
       })
 
-    this.bucket = options.bucket ?? env.get('MINIO_BUCKET', '')
-    this.signedUrlTtlSeconds =
-      options.signedUrlTtlSeconds ?? env.get('MINIO_SIGNED_URL_TTL_SECONDS', 900)
+    this.rawBucket = options.bucket ?? env.get('S3_BUCKET') ?? env.get('MINIO_BUCKET', '')
+    this.rawSignedUrlTtlSeconds =
+      options.signedUrlTtlSeconds ??
+      env.get('S3_SIGNED_URL_TTL_SECONDS') ??
+      env.get('MINIO_SIGNED_URL_TTL_SECONDS', 900)
   }
 
   static buildKey(input: {
@@ -103,27 +93,7 @@ export default class MinioStorage {
     return `users/${segments.userId}/projects/${segments.projectId}/${segments.kind}/${segments.assetId}/${segments.filename}`
   }
 
-  /**
-   * Memastikan bucket sudah ada di MinIO, jika belum maka otomatis dibuat
-   */
-  async ensureBucketExists(): Promise<void> {
-    if (!this.bucket) return
-    try {
-      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }))
-    } catch (error: any) {
-      const isNotFound =
-        error.name === 'NotFound' ||
-        error.name === 'NoSuchBucket' ||
-        error.$metadata?.httpStatusCode === 404
-      if (isNotFound) {
-        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }))
-      } else {
-        throw error
-      }
-    }
-  }
-
-  async upload(input: StorageUploadInput) {
+  override async upload(input: StorageUploadInput) {
     this.assertConfigured()
     assertSafeStorageKey(input.key)
     assertSupportedMimeType(input.contentType)
@@ -132,31 +102,19 @@ export default class MinioStorage {
       throw new Error('checksumSha256 must be a 64-character hexadecimal SHA-256 digest')
     }
 
-    const sendPut = () =>
-      this.client.send(
-        new PutObjectCommand({
-          Bucket: this.bucket,
-          Key: input.key,
-          Body: input.body,
-          ContentType: input.contentType,
-          ContentLength: input.byteSize,
-          Metadata: {
-            ...input.metadata,
-            ...(input.checksumSha256 ? { 'checksum-sha256': input.checksumSha256 } : {}),
-          },
-        })
-      )
-
-    try {
-      await sendPut()
-    } catch (error: any) {
-      if (error.name === 'NoSuchBucket' || error.$metadata?.httpStatusCode === 404) {
-        await this.ensureBucketExists()
-        await sendPut()
-      } else {
-        throw error
-      }
-    }
+    await this.rawClient.send(
+      new PutObjectCommand({
+        Bucket: this.rawBucket,
+        Key: input.key,
+        Body: input.body,
+        ContentType: input.contentType,
+        ContentLength: input.byteSize,
+        Metadata: {
+          ...input.metadata,
+          ...(input.checksumSha256 ? { 'checksum-sha256': input.checksumSha256 } : {}),
+        },
+      })
+    )
 
     return {
       key: input.key,
@@ -166,42 +124,24 @@ export default class MinioStorage {
     }
   }
 
-  async createDownloadUrl(key: string, expiresIn = this.signedUrlTtlSeconds) {
+  override async createDownloadUrl(key: string, expiresIn = this.rawSignedUrlTtlSeconds) {
     this.assertConfigured()
     assertSafeStorageKey(key)
 
-    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
-      expiresIn,
-    })
-  }
-
-  async createUploadUrl(input: {
-    key: string
-    contentType: string
-    byteSize?: number
-    expiresIn?: number
-  }) {
-    this.assertConfigured()
-    assertSafeStorageKey(input.key)
-    assertSupportedMimeType(input.contentType)
-
     return getSignedUrl(
-      this.client,
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: input.key,
-        ContentType: input.contentType,
-        ContentLength: input.byteSize,
-      }),
-      { expiresIn: input.expiresIn ?? this.signedUrlTtlSeconds }
+      this.rawClient,
+      new GetObjectCommand({ Bucket: this.rawBucket, Key: key }),
+      { expiresIn }
     )
   }
 
-  async head(key: string): Promise<StorageAssetHead> {
+  override async head(key: string): Promise<StorageAssetHead> {
     this.assertConfigured()
     assertSafeStorageKey(key)
 
-    const result = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }))
+    const result = await this.rawClient.send(
+      new HeadObjectCommand({ Bucket: this.rawBucket, Key: key })
+    )
 
     return {
       key,
@@ -212,17 +152,17 @@ export default class MinioStorage {
     }
   }
 
-  async delete(key: string) {
+  override async delete(key: string) {
     this.assertConfigured()
     assertSafeStorageKey(key)
 
-    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
+    await this.rawClient.send(new DeleteObjectCommand({ Bucket: this.rawBucket, Key: key }))
 
     return { key }
   }
 
   private assertConfigured() {
-    if (!this.bucket) {
+    if (!this.rawBucket) {
       throw new Error('Object storage is not configured: MINIO_BUCKET is missing')
     }
   }

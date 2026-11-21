@@ -230,6 +230,37 @@ export class SceneSchema extends BaseModel {
   declare videoId: number
 }
 
+export class SocialAccountSchema extends BaseModel {
+  static $columns = ['accessToken', 'accountHandle', 'accountId', 'accountName', 'createdAt', 'enabled', 'expiresAt', 'id', 'metadata', 'platform', 'refreshToken', 'scopes', 'updatedAt'] as const
+  $columns = SocialAccountSchema.$columns
+  @column()
+  declare accessToken: string
+  @column()
+  declare accountHandle: string | null
+  @column()
+  declare accountId: string
+  @column()
+  declare accountName: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare metadata: any
+  @column()
+  declare platform: string
+  @column()
+  declare refreshToken: string | null
+  @column()
+  declare scopes: any
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'role', 'updatedAt'] as const
   $columns = UserSchema.$columns
@@ -270,4 +301,35 @@ export class VideoSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare width: number
+}
+
+export class WorkspaceAssetSchema extends BaseModel {
+  static $columns = ['assetPath', 'channel', 'checksumSha256', 'compressedByteSize', 'compressedMime', 'createdAt', 'id', 'originalByteSize', 'originalMime', 'storageDriver', 'storageKey', 'updatedAt', 'workspaceSlug'] as const
+  $columns = WorkspaceAssetSchema.$columns
+  @column()
+  declare assetPath: string
+  @column()
+  declare channel: string
+  @column()
+  declare checksumSha256: string
+  @column()
+  declare compressedByteSize: bigint | number
+  @column()
+  declare compressedMime: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare originalByteSize: bigint | number
+  @column()
+  declare originalMime: string
+  @column()
+  declare storageDriver: string
+  @column()
+  declare storageKey: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare workspaceSlug: string
 }
