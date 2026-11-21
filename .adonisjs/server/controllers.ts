@@ -11,4 +11,5 @@ export const controllers = {
   Profile: () => import('#controllers/profile_controller'),
   Projects: () => import('#controllers/projects_controller'),
   Session: () => import('#controllers/session_controller'),
+  SocialConnections: () => import('#controllers/social_connections_controller'),
 }

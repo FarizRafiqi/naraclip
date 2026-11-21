@@ -4,5 +4,18 @@
     "rootDir": "./",
     "jsx": "react-jsx",
     "outDir": "./build"
-  }
+  },
+  "exclude": [
+    "inertia/**",
+    "node_modules/**",
+    "build/**",
+    "bower_components/**",
+    "jspm_packages/**",
+    "packages/pipeline/**",
+    "packages/remotion/**",
+    "packages/fast-renderer/**",
+    "packages/hyperframes/**",
+    "content/**",
+    "public/**"
+  ]
 }

@@ -12,7 +12,16 @@ import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 
+const SocialConnectionsController = () => import('#controllers/social_connections_controller')
+
 router.on('/').renderInertia('home', {}).as('home')
+
+router
+  .group(() => {
+    router.get(':provider/redirect', [SocialConnectionsController, 'redirect'])
+    router.get(':provider/callback', [SocialConnectionsController, 'callback'])
+  })
+  .prefix('/social')
 
 router
   .group(() => {
@@ -50,6 +59,14 @@ router
         router.post('videos/:videoId/jobs', [controllers.Jobs, 'store'])
         router.get('jobs/:id', [controllers.Jobs, 'show'])
       })
+      .use(middleware.apiAuth())
+
+    router
+      .group(() => {
+        router.get('providers', [SocialConnectionsController, 'providers'])
+        router.post('publish', [SocialConnectionsController, 'publish'])
+      })
+      .prefix('social')
       .use(middleware.apiAuth())
 
     router

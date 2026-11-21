@@ -55,4 +55,21 @@ export default await Env.create(new URL('../', import.meta.url), {
   NINEROUTER_ENDPOINT: Env.schema.string.optional(),
   NINEROUTER_API_KEY: Env.schema.secret.optional(),
   COMFYUI_ENDPOINT: Env.schema.string.optional(),
+
+  // Social Platforms OAuth
+  GOOGLE_CLIENT_ID: Env.schema.string.optional(),
+  GOOGLE_CLIENT_SECRET: Env.schema.secret.optional(),
+  GOOGLE_REDIRECT_URI: Env.schema.string.optional(),
+  TIKTOK_CLIENT_KEY: Env.schema.string.optional(),
+  TIKTOK_CLIENT_SECRET: Env.schema.secret.optional(),
+  TIKTOK_REDIRECT_URI: Env.schema.string.optional(),
+  INSTAGRAM_CLIENT_ID: Env.schema.string.optional(),
+  INSTAGRAM_CLIENT_SECRET: Env.schema.secret.optional(),
+  INSTAGRAM_REDIRECT_URI: Env.schema.string.optional(),
+  FACEBOOK_CLIENT_ID: Env.schema.string.optional(),
+  FACEBOOK_CLIENT_SECRET: Env.schema.secret.optional(),
+  FACEBOOK_REDIRECT_URI: Env.schema.string.optional(),
+  TWITTER_CLIENT_ID: Env.schema.string.optional(),
+  TWITTER_CLIENT_SECRET: Env.schema.secret.optional(),
+  TWITTER_REDIRECT_URI: Env.schema.string.optional(),
 })
