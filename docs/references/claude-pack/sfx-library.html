@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SFX Library untuk Motion Graphic</title>
+<style>
+:root{--bg:#faf6ef;--card:#fffdf9;--ink:#2b2420;--mute:#7a6d62;--line:#e6dccd;--acc:#c4572f;--acc2:#f3e1d6;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1916;--card:#26211d;--ink:#f2ebe2;--mute:#a69a8c;--line:#3a322b;--acc:#e8825a;--acc2:#3b2a22;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d1916;--card:#26211d;--ink:#f2ebe2;--mute:#a69a8c;--line:#3a322b;--acc:#e8825a;--acc2:#3b2a22;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+main{max-width:960px;margin:0 auto;padding:28px 18px 60px}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:clamp(26px,5vw,38px);margin:0 0 6px}
+p.lead{color:var(--mute);margin:0 0 20px;max-width:60ch}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:26px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;position:sticky;top:8px;z-index:5}
+.bar label{font-size:13px;color:var(--mute);display:flex;gap:8px;align-items:center}
+input[type=range]{accent-color:var(--acc);width:120px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;transition:transform .12s,background .12s}
+button:hover{background:var(--acc2)}
+button:active{transform:scale(.96)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.pri:hover{filter:brightness(1.08);background:var(--acc)}
+h2{font-family:Georgia,serif;font-size:20px;margin:30px 0 10px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sfx{display:flex;border:1px solid var(--line);background:var(--card);border-radius:12px;overflow:hidden}
+.sfx .play{flex:1;text-align:left;border:0;border-radius:0;background:none;padding:12px;font-weight:500}
+.sfx .play:hover{background:var(--acc2)}
+.sfx .code{border:0;border-left:1px solid var(--line);border-radius:0;font-size:12px;color:var(--mute);padding:0 10px}
+.sfx.on{outline:2px solid var(--acc)}
+.cue{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;overflow-x:auto}
+.cue table{border-collapse:collapse;width:100%;font-size:14px}
+.cue td,.cue th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<main>
+<h1>SFX Library</h1>
+<p class="lead">Semua bunyi di sini dibuat murni dari kode (Web Audio API), tanpa file audio. Klik untuk dengar, klik “kode” untuk salin fungsinya. Untuk video, rekam audio tab ini atau pakai kodenya di proyekmu.</p>
+<div class="bar">
+  <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7"></label>
+  <button class="pri" id="cue">▶ Putar cue sheet</button>
+  <button id="all">Putar semua</button>
+  <button id="copyAll">Salin semua kode</button>
+</div>
+<div id="lib"></div>
+<h2>Cue sheet contoh (dari file md)</h2>
+<div class="cue"><table>
+<tr><th>Waktu</th><th>Event</th><th>SFX</th></tr>
+<tr><td>0.0s</td><td>Judul muncul</td><td>whoosh</td></tr>
+<tr><td>0.8s</td><td>Ikon pop-in</td><td>pop</td></tr>
+<tr><td>2.5s</td><td>Transisi scene</td><td>whoosh</td></tr>
+<tr><td>4.0s</td><td>Counter naik</td><td>counter</td></tr>
+<tr><td>6.0s</td><td>Logo penutup</td><td>hit + bell</td></tr>
+</table></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script id="h">
+let ctx, master;
+function A(){
+  if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=0.7;master.connect(ctx.destination);}
+  if(ctx.state==='suspended')ctx.resume();
+  return ctx;
+}
+function noiseBuf(d){
+  const c=A(),b=c.createBuffer(1,Math.ceil(c.sampleRate*d),c.sampleRate),x=b.getChannelData(0);
+  for(let i=0;i<x.length;i++)x[i]=Math.random()*2-1;
+  return b;
+}
+// osilator: type, freq awal, freq akhir, durasi, gain, delay, attack
+function tone(type,f1,f2,dur,g=0.3,t=0,at=0.005){
+  const c=A(),o=c.createOscillator(),e=c.createGain(),s=c.currentTime+t;
+  o.type=type;o.frequency.setValueAtTime(f1,s);
+  if(f2!==f1)o.frequency.exponentialRampToValueAtTime(Math.max(f2,1),s+dur);
+  e.gain.setValueAtTime(0.0001,s);
+  e.gain.linearRampToValueAtTime(g,s+Math.min(at,dur*0.95));
+  e.gain.exponentialRampToValueAtTime(0.0001,s+dur);
+  o.connect(e);e.connect(master);o.start(s);o.stop(s+dur+0.05);
+}
+// noise + filter: filter type, freq awal, freq akhir, durasi, gain, delay, Q, attack
+function noise(type,f1,f2,dur,g=0.3,t=0,q=1,at=0.005){
+  const c=A(),n=c.createBufferSource(),f=c.createBiquadFilter(),e=c.createGain(),s=c.currentTime+t;
+  n.buffer=noiseBuf(dur+0.1);f.type=type;f.Q.value=q;
+  f.frequency.setValueAtTime(f1,s);
+  if(f2!==f1)f.frequency.exponentialRampToValueAtTime(Math.max(f2,1),s+dur);
+  e.gain.setValueAtTime(0.0001,s);
+  e.gain.linearRampToValueAtTime(g,s+Math.min(at,dur*0.95));
+  e.gain.exponentialRampToValueAtTime(0.0001,s+dur);
+  n.connect(f);f.connect(e);e.connect(master);n.start(s);n.stop(s+dur+0.1);
+}
+const R=(a,b)=>a+Math.random()*(b-a);
+</script>
+
+<script id="s">
+const SFX={
+ // ===== TRANSISI =====
+ whoosh:{c:'Transisi',f:()=>noise('bandpass',400,2500,0.45,0.4,0,1.5,0.18)},
+ whooshUp:{c:'Transisi',f:()=>noise('bandpass',200,4000,0.6,0.4,0,1.2,0.4)},
+ whooshDown:{c:'Transisi',f:()=>noise('bandpass',3500,200,0.6,0.4,0,1.2,0.05)},
+ swipe:{c:'Transisi',f:()=>noise('highpass',2000,6000,0.2,0.25,0,0.7,0.05)},
+ slideIn:{c:'Transisi',f:()=>{noise('bandpass',1200,500,0.35,0.3,0,2,0.05);tone('sine',500,250,0.3,0.1)}},
+ riser:{c:'Transisi',f:()=>{tone('sawtooth',120,1200,1.5,0.15,0,1.3);noise('highpass',500,6000,1.5,0.15,0,0.7,1.3)}},
+ reverseSwell:{c:'Transisi',f:()=>noise('lowpass',200,5000,1.2,0.35,0,0.8,1.1)},
+ sweepHigh:{c:'Transisi',f:()=>noise('bandpass',800,8000,0.5,0.3,0,4,0.3)},
+ // ===== UI =====
+ pop:{c:'UI',f:()=>tone('sine',700,200,0.12,0.5)},
+ click:{c:'UI',f:()=>tone('square',1800,900,0.03,0.15,0,0.001)},
+ tick:{c:'UI',f:()=>tone('square',2400,2400,0.02,0.12,0,0.001)},
+ tap:{c:'UI',f:()=>tone('triangle',500,300,0.08,0.4)},
+ toggleOn:{c:'UI',f:()=>{tone('sine',500,500,0.08,0.3);tone('sine',800,800,0.1,0.3,0.07)}},
+ toggleOff:{c:'UI',f:()=>{tone('sine',800,800,0.08,0.3);tone('sine',500,500,0.1,0.3,0.07)}},
+ bubble:{c:'UI',f:()=>tone('sine',300,900,0.15,0.4)},
+ hover:{c:'UI',f:()=>tone('sine',1200,1400,0.05,0.1)},
+ select:{c:'UI',f:()=>tone('triangle',660,990,0.12,0.3)},
+ swish:{c:'UI',f:()=>noise('bandpass',2500,900,0.12,0.25,0,2,0.02)},
+ // ===== IMPACT =====
+ hit:{c:'Impact',f:()=>{tone('sine',140,40,0.35,0.9,0,0.002);noise('lowpass',800,100,0.2,0.4,0,0.7,0.002)}},
+ softHit:{c:'Impact',f:()=>tone('sine',180,70,0.3,0.5)},
+ boom:{c:'Impact',f:()=>{tone('sine',80,25,1.4,0.9,0,0.005);noise('lowpass',600,50,1.2,0.5,0,0.7,0.005)}},
+ slam:{c:'Impact',f:()=>{noise('lowpass',3000,200,0.3,0.7,0,0.8,0.001);tone('sine',120,35,0.4,0.8,0,0.001)}},
+ punch:{c:'Impact',f:()=>{tone('sine',200,60,0.18,0.8,0,0.001);noise('bandpass',1500,400,0.08,0.4,0,1,0.001)}},
+ stamp:{c:'Impact',f:()=>{noise('lowpass',2000,200,0.12,0.6,0,0.7,0.001);tone('sine',100,50,0.2,0.7,0,0.001)}},
+ cymbal:{c:'Impact',f:()=>noise('highpass',6000,6000,1.5,0.3,0,0.5,0.002)},
+ // ===== NOTIFIKASI =====
+ ding:{c:'Notifikasi',f:()=>{tone('sine',1320,1320,0.9,0.35,0,0.002);tone('sine',2640,2640,0.5,0.1,0,0.002)}},
+ bell:{c:'Notifikasi',f:()=>{tone('sine',523,523,2,0.3,0,0.002);tone('sine',1046,1046,1.6,0.15,0,0.002);tone('sine',1568,1568,1.3,0.1,0,0.002)}},
+ chime:{c:'Notifikasi',f:()=>[784,988,1175].forEach((f,i)=>tone('sine',f,f,1.0,0.25,i*0.09,0.003))},
+ success:{c:'Notifikasi',f:()=>[523,659,784,1047].forEach((f,i)=>tone('triangle',f,f,0.25,0.28,i*0.08))},
+ error:{c:'Notifikasi',f:()=>{tone('sawtooth',220,180,0.25,0.3);tone('sawtooth',200,150,0.3,0.3,0.15)}},
+ warning:{c:'Notifikasi',f:()=>{tone('square',880,880,0.12,0.2);tone('square',880,880,0.12,0.2,0.2)}},
+ notify:{c:'Notifikasi',f:()=>{tone('sine',880,880,0.15,0.3);tone('sine',1175,1175,0.3,0.3,0.12)}},
+ coin:{c:'Notifikasi',f:()=>{tone('square',988,988,0.07,0.2);tone('square',1319,1319,0.4,0.2,0.07)}},
+ levelUp:{c:'Notifikasi',f:()=>[392,523,659,784,1047].forEach((f,i)=>tone('square',f,f,0.14,0.18,i*0.07))},
+ okay:{c:'Notifikasi',f:()=>tone('sine',600,900,0.1,0.3)},
+ // ===== TEKS & DATA =====
+ typewriter:{c:'Teks & Data',f:()=>{for(let i=0;i<9;i++){const t=i*0.09+R(0,0.03);noise('bandpass',3000,2000,0.03,0.25,t,1,0.001);tone('square',R(900,1300),600,0.02,0.08,t,0.001)}}},
+ keyClick:{c:'Teks & Data',f:()=>{tone('square',1500,700,0.025,0.15,0,0.001);noise('highpass',3000,3000,0.02,0.15,0,0.5,0.001)}},
+ counter:{c:'Teks & Data',f:()=>{for(let i=0;i<10;i++)tone('square',1000+i*80,1000+i*80,0.03,0.1,i*0.06,0.001)}},
+ blip:{c:'Teks & Data',f:()=>tone('square',1000,1000,0.06,0.2)},
+ dataStream:{c:'Teks & Data',f:()=>{for(let i=0;i<14;i++)tone('sine',R(800,2200),R(800,2200),0.05,0.12,i*0.045,0.002)}},
+ barGrow:{c:'Teks & Data',f:()=>tone('triangle',200,800,0.4,0.25,0,0.1)},
+ // ===== SCI-FI & GLITCH =====
+ glitch:{c:'Sci-fi & Glitch',f:()=>{for(let i=0;i<7;i++){tone('square',R(100,2500),R(100,2500),0.04,0.18,i*0.04,0.001);noise('highpass',R(2000,6000),3000,0.03,0.15,i*0.04,1,0.001)}}},
+ laser:{c:'Sci-fi & Glitch',f:()=>tone('sawtooth',2000,200,0.25,0.25)},
+ zap:{c:'Sci-fi & Glitch',f:()=>{noise('bandpass',5000,300,0.2,0.4,0,3,0.001);tone('sawtooth',1500,100,0.2,0.2,0,0.001)}},
+ powerUp:{c:'Sci-fi & Glitch',f:()=>tone('sawtooth',150,900,0.6,0.2,0,0.55)},
+ powerDown:{c:'Sci-fi & Glitch',f:()=>tone('sawtooth',900,60,0.7,0.25)},
+ scan:{c:'Sci-fi & Glitch',f:()=>{tone('sine',400,1600,0.5,0.2,0,0.25);tone('sine',1600,400,0.5,0.2,0.5,0.01)}},
+ beep:{c:'Sci-fi & Glitch',f:()=>tone('sine',1000,1000,0.15,0.3)},
+ sonar:{c:'Sci-fi & Glitch',f:()=>tone('sine',1000,1000,1.2,0.3,0,0.003)},
+ alarm:{c:'Sci-fi & Glitch',f:()=>{for(let i=0;i<4;i++)tone('square',i%2?600:900,i%2?600:900,0.2,0.18,i*0.22,0.005)}},
+ // ===== LAIN-LAIN =====
+ shutter:{c:'Lain-lain',f:()=>{noise('highpass',4000,4000,0.03,0.4,0,0.5,0.001);noise('highpass',3000,3000,0.05,0.3,0.06,0.5,0.001)}},
+ sparkle:{c:'Lain-lain',f:()=>{for(let i=0;i<9;i++)tone('sine',R(2000,6000),R(2000,6000),0.15,0.12,i*0.05,0.002)}},
+ drip:{c:'Lain-lain',f:()=>{tone('sine',1400,500,0.1,0.4);tone('sine',900,400,0.15,0.2,0.1)}},
+ heartbeat:{c:'Lain-lain',f:()=>{tone('sine',70,40,0.15,0.9);tone('sine',60,35,0.18,0.7,0.2)}},
+ shimmer:{c:'Lain-lain',f:()=>noise('highpass',4000,9000,0.9,0.15,0,2,0.4)},
+ wind:{c:'Lain-lain',f:()=>noise('bandpass',300,700,1.6,0.3,0,3,0.8)}
+};
+</script>
+
+<script>
+const lib=document.getElementById('lib'),toast=document.getElementById('toast');
+let tt;
+function say(m){toast.textContent=m;toast.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove('show'),1400)}
+function copy(txt){
+  try{navigator.clipboard.writeText(txt).then(()=>say('Kode tersalin'),()=>fb())}catch(e){fb()}
+  function fb(){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy');say('Kode tersalin')}catch(e){say('Gagal menyalin')}a.remove()}
+}
+const H=()=>document.getElementById('h').textContent.trim();
+const cats={};
+Object.keys(SFX).forEach(k=>{(cats[SFX[k].c]=cats[SFX[k].c]||[]).push(k)});
+const els={};
+Object.keys(cats).forEach(c=>{
+  const h=document.createElement('h2');h.textContent=c+' ('+cats[c].length+')';lib.appendChild(h);
+  const g=document.createElement('div');g.className='grid';lib.appendChild(g);
+  cats[c].forEach(k=>{
+    const d=document.createElement('div');d.className='sfx';els[k]=d;
+    const p=document.createElement('button');p.className='play';p.textContent='▶ '+k;p.onclick=()=>play(k);
+    const b=document.createElement('button');b.className='code';b.textContent='kode';
+    b.onclick=()=>copy(H()+'\n\nconst '+k+' = '+SFX[k].f.toString()+'\n'+k+'(); // putar');
+    d.append(p,b);g.appendChild(d);
+  });
+});
+function play(k){
+  try{A();master.gain.value=+document.getElementById('vol').value;SFX[k].f()}catch(e){say('Audio gagal')}
+  const d=els[k];d.classList.add('on');setTimeout(()=>d.classList.remove('on'),250);
+}
+document.getElementById('vol').oninput=e=>{if(master)master.gain.value=+e.target.value};
+document.getElementById('cue').onclick=()=>{
+  [[0,'whoosh'],[800,'pop'],[2500,'whoosh'],[4000,'counter'],[6000,'hit'],[6000,'bell']].forEach(([t,k])=>setTimeout(()=>play(k),t));
+};
+document.getElementById('all').onclick=()=>{Object.keys(SFX).forEach((k,i)=>setTimeout(()=>play(k),i*900))};
+document.getElementById('copyAll').onclick=()=>copy(H()+'\n\n'+document.getElementById('s').textContent.trim());
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Claude Motion Pack</title>
+<style>
+:root{--bg:#faf6ef;--card:#fffdf9;--ink:#2b2420;--mute:#7a6d62;--line:#e6dccd;--acc:#c4572f;--acc2:#f3e1d6;--stage:#f3ece0;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1916;--card:#26211d;--ink:#f2ebe2;--mute:#a69a8c;--line:#3a322b;--acc:#e8825a;--acc2:#3b2a22;--stage:#16120f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d1916;--card:#26211d;--ink:#f2ebe2;--mute:#a69a8c;--line:#3a322b;--acc:#e8825a;--acc2:#3b2a22;--stage:#16120f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+main{max-width:1000px;margin:0 auto;padding:28px 18px 70px}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:clamp(26px,5vw,38px);margin:0 0 6px}
+h2{font-family:Georgia,serif;font-size:21px;margin:34px 0 10px;font-weight:600}
+.lead{color:var(--mute);max-width:62ch;margin:0 0 18px}
+button{font:inherit;font-size:13px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:6px 11px;transition:transform .12s,background .12s}
+button:hover{background:var(--acc2)}button:active{transform:scale(.96)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.sw div{flex:1 1 110px;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px;background:var(--card)}
+.sw i{display:block;height:44px}.sw span{display:block;padding:5px 8px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap;margin:8px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pc{border:1px solid var(--line);background:var(--card);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.stage{height:120px;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;gap:8px}
+.pc .meta{padding:9px 11px;font-size:13px}.pc .meta b{display:block}.pc .meta small{color:var(--mute);display:block;min-height:34px}
+.pc .acts{display:flex;gap:6px;padding:0 11px 11px}
+.obj{padding:9px 16px;border-radius:11px;background:var(--acc);color:#fff;font-family:Georgia,serif;font-size:17px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+</style>
+<style id="pk"></style>
+</head>
+<body>
+<main>
+<h1>Claude Motion Pack</h1>
+<p class="lead">Token desain, <span id="cnt"></span> preset animasi, dan prompt induk. Klik “CSS” untuk kode, “Prompt” untuk deskripsi teks yang bisa ditempel ke AI video atau tool apa pun. Gaya ini terinspirasi tampilan Claude (hangat, tenang, minimalis), bukan panduan brand resmi Anthropic.</p>
+
+<h2>1. Prompt induk (tempel ke AI apa pun)</h2>
+<div class="bar"><button class="pri" data-copy="master">Salin prompt induk</button></div>
+<pre id="master"></pre>
+
+<h2>2. Token desain</h2>
+<div class="sw" id="sw"></div>
+<div class="bar"><button class="pri" data-copy="tok">Salin token CSS</button></div>
+<pre id="tok"></pre>
+
+<h2>3. Preset animasi</h2>
+<div class="bar"><button class="pri" id="allCss">Salin semua CSS</button><button id="allPrompt">Salin semua prompt</button><button id="replayAll">Ulang semua</button></div>
+<div id="lib"></div>
+
+<h2>4. Cara pakai biar hasil mirip</h2>
+<pre id="tips"></pre>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const E={out:'cubic-bezier(.22,1,.36,1)',in:'cubic-bezier(.64,0,.78,0)',io:'cubic-bezier(.65,0,.35,1)',back:'cubic-bezier(.34,1.56,.64,1)',lin:'linear'};
+const TOK=`:root{
+--cream:#FAF6EF;--paper:#F3ECE0;--sand:#D9C9B4;--ink:#2B2420;--mute:#7A6D62;
+--terracotta:#C4572F;--coral:#E8825A;--dark:#1D1916;
+--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.64,0,.78,0);
+--ease-io:cubic-bezier(.65,0,.35,1);--ease-back:cubic-bezier(.34,1.56,.64,1);
+--d-fast:.3s;--d-base:.6s;--d-slow:1s;--stagger:.1s;
+--font-head:Georgia,"Times New Roman",serif;
+--font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+--acc:var(--terracotta);
+}`;
+const MASTER=`Create a motion graphic video in a calm, warm, minimalist “Claude-style”.
+
+PALETTE: background cream #FAF6EF (or dark #1D1916), text ink #2B2420, accent terracotta #C4572F, secondary coral #E8825A, lines sand #D9C9B4. No neon, no purple-blue gradients, no glossy 3D.
+TYPE: serif headlines (Georgia-like), clean sans-serif body. Max 2 fonts. Generous whitespace, one idea per scene.
+MOTION: soft and smooth. Enter = fade + slide 24-40px, 0.6-0.8s, ease-out expo cubic-bezier(.22,1,.36,1). Exit = faster (0.3-0.4s), ease-in. Stagger groups 80-120ms. Scale only 0.94 to 1. Small pop-in allowed (overshoot max 8%). Lines draw themselves. Numbers count up. Text reveals from behind a mask.
+TRANSITIONS: crossfade, thin horizontal wipe, shared-element morph. No glitch, spin, shake or flashy zoom.
+RHYTHM: hold each scene 2-4s so text is readable. 24-30 fps. No camera shake.
+SFX: very quiet. Soft whoosh on transitions, tiny pop on element entrance, light tick on counters, one soft hit + bell on the final logo. No loud music.
+STRUCTURE: problem, solution, result, call to action.`;
+const TIPS=`1. Tempel prompt induk di awal, lalu tambah isi scene kamu di bawahnya.
+2. Sebut angka persis: warna hex, durasi detik, nama easing.
+3. Satu scene, satu pesan. Teks pendek.
+4. Pakai preset nama yang sama (fade-up, mask-reveal, line-draw) di semua scene.
+5. Model video generatif kurang patuh aturan persis. Hasil paling identik kalau pakai CSS/GSAP langsung dari pack ini.
+6. Kalau AI lain tidak bisa ikut, minta dia hasilkan HTML/CSS, lalu pakai kode preset di sini.`;
+// [kategori, id, keyframes, durasi, ease, deskripsi, loop?]
+const S=[
+['Masuk','fade-up','from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}','.7s','out','naik 32px sambil fade in'],
+['Masuk','fade-down','from{opacity:0;transform:translateY(-32px)}to{opacity:1;transform:none}','.7s','out','turun 32px sambil fade in'],
+['Masuk','fade-left','from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}','.7s','out','geser dari kiri 36px sambil fade in'],
+['Masuk','fade-right','from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}','.7s','out','geser dari kanan 36px sambil fade in'],
+['Masuk','fade-in','from{opacity:0}to{opacity:1}','.6s','io','fade in polos'],
+['Masuk','scale-in','from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}','.6s','out','membesar halus dari 94%'],
+['Masuk','pop-in','from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}','.5s','back','pop kecil, overshoot sedikit'],
+['Masuk','blur-in','from{opacity:0;filter:blur(12px);transform:translateY(16px)}to{opacity:1;filter:none;transform:none}','.8s','out','fokus dari blur 12px'],
+['Masuk','flip-in','from{opacity:0;transform:perspective(600px) rotateX(-70deg)}to{opacity:1;transform:none}','.7s','out','terbuka seperti kartu, sumbu X'],
+['Masuk','drop-in','from{opacity:0;transform:translateY(-48px)}to{opacity:1;transform:none}','.6s','back','jatuh dari atas, mendarat lembut'],
+['Masuk','zoom-soft','from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:none}','1s','out','zoom out pelan dari 108%'],
+['Keluar','fade-out-down','to{opacity:0;transform:translateY(24px)}','.4s','in','turun 24px sambil hilang'],
+['Keluar','scale-out','to{opacity:0;transform:scale(.94)}','.35s','in','mengecil ke 94% sambil hilang'],
+['Keluar','slide-out-left','to{opacity:0;transform:translateX(-60px)}','.4s','in','geser keluar ke kiri'],
+['Keluar','blur-out','to{opacity:0;filter:blur(10px)}','.4s','in','hilang sambil blur'],
+['Penekanan','pulse','0%,100%{transform:none}50%{transform:scale(1.06)}','1.6s','io','denyut halus 6%',1],
+['Penekanan','float','0%,100%{transform:none}50%{transform:translateY(-10px)}','3s','io','melayang naik turun 10px',1],
+['Penekanan','wiggle','0%,100%{transform:none}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}','1.2s','io','goyang kecil 4 derajat',1],
+['Penekanan','shake-soft','0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}','.5s','io','getar horizontal 5px',1],
+['Penekanan','breathe','0%,100%{box-shadow:0 0 0 0 #c4572f55}50%{box-shadow:0 0 0 14px #c4572f00}','2s','out','cincin glow mengembang',1],
+['Penekanan','spin-slow','to{transform:rotate(360deg)}','8s','lin','putar penuh 8 detik',1],
+// ---- preset khusus ----
+['Penekanan','highlight-sweep','',0,0,'stabilo menyapu di bawah teks',0,'<span class="hl">Highlight</span>','&{font:20px Georgia,serif}&.hl,&  .hl{background:linear-gradient(#c4572f66,#c4572f66) 0 90%/0% 45% no-repeat;animation:hl .8s '+E.out+' .2s forwards}@keyframes hl{to{background-size:100% 45%}}'],
+['Penekanan','underline-draw','',0,0,'garis bawah digambar dari kiri',0,'<span class="ul">Underline</span>','& .ul{position:relative;font:20px Georgia,serif}& .ul:after{content:"";position:absolute;left:0;bottom:-5px;height:3px;width:100%;background:#c4572f;transform-origin:left;animation:ul .7s '+E.out+' .2s both}@keyframes ul{from{transform:scaleX(0)}}'],
+['Penekanan','shimmer-text','',0,0,'kilau lewat di teks',0,'<span class="sh">Shimmer</span>','& .sh{font:700 26px Georgia,serif;background:linear-gradient(100deg,#7a6d62 30%,#c4572f 50%,#7a6d62 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2.4s linear infinite}@keyframes sh{to{background-position:-250% 0}}'],
+['Masuk','stagger-up','',0,0,'item muncul berurutan, jeda 120ms',0,'<div class="obj">A</div><div class="obj">B</div><div class="obj">C</div>','& .obj{animation:su .6s '+E.out+' both}& .obj:nth-child(2){animation-delay:.12s}& .obj:nth-child(3){animation-delay:.24s}@keyframes su{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}'],
+['Masuk','mask-reveal','',0,0,'teks naik dari balik mask',0,'<div class="mk"><span>Reveal</span></div>','& .mk{overflow:hidden;font:700 28px Georgia,serif}& .mk span{display:block;animation:mk .8s '+E.out+' both}@keyframes mk{from{transform:translateY(105%)}}'],
+['Data','typewriter','',0,0,'ketik per huruf + kursor kedip',0,'<div class="tw">Halo dari Claude</div>','& .tw{font:16px ui-monospace,Menlo,monospace;overflow:hidden;white-space:nowrap;border-right:2px solid #c4572f;width:0;animation:tw 2s steps(16) .2s forwards,bl .7s step-end infinite}@keyframes tw{to{width:16ch}}@keyframes bl{50%{border-color:transparent}}'],
+['Data','line-draw','',0,0,'garis SVG menggambar dirinya',0,'<svg width="150" height="70" viewBox="0 0 150 70"><path pathLength="1" d="M5 60 C35 60 35 10 70 10 S110 55 145 15" fill="none" stroke="#c4572f" stroke-width="4" stroke-linecap="round"/></svg>','& path{stroke-dasharray:1;stroke-dashoffset:1;animation:ld 1.4s '+E.io+' both}@keyframes ld{to{stroke-dashoffset:0}}'],
+['Data','ring-progress','',0,0,'cincin progres terisi 75%',0,'<svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="none" stroke="#d9c9b4" stroke-width="8"/><circle pathLength="100" cx="40" cy="40" r="32" fill="none" stroke="#c4572f" stroke-width="8" stroke-linecap="round" transform="rotate(-90 40 40)"/></svg>','& circle:last-child{stroke-dasharray:100;stroke-dashoffset:100;animation:rg 1.4s '+E.out+' both}@keyframes rg{to{stroke-dashoffset:25}}'],
+['Data','bar-grow','',0,0,'batang tumbuh dari dasar, berurutan',0,'<div class="br"><i style="--h:40px"></i><i style="--h:70px"></i><i style="--h:55px"></i><i style="--h:90px"></i></div>','& .br{display:flex;align-items:flex-end;gap:8px;height:90px}& .br i{width:22px;height:var(--h);background:#c4572f;border-radius:5px 5px 0 0;transform-origin:bottom;animation:bg .8s '+E.out+' both}& .br i:nth-child(2){animation-delay:.1s}& .br i:nth-child(3){animation-delay:.2s}& .br i:nth-child(4){animation-delay:.3s}@keyframes bg{from{transform:scaleY(0)}}'],
+['Data','counter-up','',0,0,'angka naik 0 ke 1280, easing out',0,'<div class="obj" data-count="1280">0</div>','',`const el=document.querySelector('.counter-up .obj'),T=1500,t0=performance.now();(function f(n){const p=Math.min((n-t0)/T,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(1280*e).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f)})(t0);`],
+['Transisi','wipe-right','',0,0,'tirai menyapu kiri ke kanan',0,'<div class="blk"></div>','& .blk{width:150px;height:80px;border-radius:10px;background:#c4572f;animation:wp 1s '+E.io+' both}@keyframes wp{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}'],
+['Transisi','circle-reveal','',0,0,'lingkaran membuka dari tengah',0,'<div class="blk"></div>','& .blk{width:150px;height:80px;border-radius:10px;background:#c4572f;animation:cr 1s '+E.io+' both}@keyframes cr{from{clip-path:circle(0 at 50% 50%)}to{clip-path:circle(75% at 50% 50%)}}'],
+['Transisi','push-left','',0,0,'scene baru mendorong masuk dari kanan',0,'<div class="obj">Scene 2</div>','& .obj{animation:pl .7s '+E.io+' both}@keyframes pl{from{transform:translateX(160%)}to{transform:none}}'],
+['Transisi','crossfade','',0,0,'dua scene bertukar dengan fade',0,'<div class="obj" style="position:absolute;animation:cf 3s ease-in-out infinite">Scene 1</div><div class="obj" style="position:absolute;background:#2b2420;animation:cf 3s ease-in-out infinite reverse">Scene 2</div>','@keyframes cf{0%,40%{opacity:1}60%,100%{opacity:0}}'],
+['Latar','gradient-drift','',0,0,'gradien hangat bergeser pelan',0,'<div class="gd"></div>','& .gd{position:absolute;inset:0;background:linear-gradient(120deg,#faf6ef,#f3e1d6,#e8825a55,#faf6ef);background-size:300% 300%;animation:gd 8s ease-in-out infinite}@keyframes gd{50%{background-position:100% 50%}}'],
+['Latar','dot-grid-pan','',0,0,'grid titik bergeser pelan',0,'<div class="dg"></div>','& .dg{position:absolute;inset:0;background:radial-gradient(#c4572f55 1.5px,transparent 1.5px) 0 0/18px 18px;animation:dg 4s linear infinite}@keyframes dg{to{background-position:18px 18px}}'],
+['Latar','orbit','',0,0,'titik mengorbit lingkaran',0,'<div class="ob"><i></i></div>','& .ob{width:80px;height:80px;border:1.5px dashed #d9c9b4;border-radius:50%;animation:ob 4s linear infinite}& .ob i{display:block;width:14px;height:14px;margin:-7px auto 0;border-radius:50%;background:#c4572f}@keyframes ob{to{transform:rotate(360deg)}}']
+];
+const P=S.map(a=>{const [c,id,kf,d,e,desc,loop,html,css,js]=a;const o={c,id,desc,html:html||'<div class="obj">Claude</div>',js};
+ if(css!==undefined)o.css=css;
+ else{o.css=`@keyframes ${id}{${kf}}\n& .obj{animation:${id} ${d} ${E[e]} ${loop?'infinite ':''}both}`;o.simple=1;o.d=d;o.e=E[e]}
+ return o});
+const toast=document.getElementById('toast');let tt;
+const say=m=>{toast.textContent=m;toast.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove('show'),1400)};
+function copy(txt){try{navigator.clipboard.writeText(txt).then(()=>say('Tersalin'),fb)}catch(e){fb()}
+ function fb(){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy');say('Tersalin')}catch(e){say('Gagal menyalin')}a.remove()}}
+const cssFor=(p,pre)=>p.css.split('&').join(pre);
+const outCss=p=>cssFor(p,'.'+p.id);
+const promptFor=p=>`Animation “${p.id}”: ${p.desc}.`+(p.simple?` Duration ${p.d}, easing ${p.e}.`:'')+` Style: calm, warm, minimal.`;
+// halaman
+document.getElementById('master').textContent=MASTER;
+document.getElementById('tok').textContent=TOK;
+document.getElementById('tips').textContent=TIPS;
+document.getElementById('cnt').textContent=P.length;
+[['cream','#FAF6EF'],['paper','#F3ECE0'],['sand','#D9C9B4'],['ink','#2B2420'],['terracotta','#C4572F'],['coral','#E8825A'],['dark','#1D1916']].forEach(([n,h])=>{const d=document.createElement('div');d.innerHTML=`<i style="background:${h}"></i><span>${n}<br>${h}</span>`;document.getElementById('sw').appendChild(d)});
+document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(document.getElementById(b.dataset.copy).textContent));
+document.getElementById('pk').textContent=P.map(p=>cssFor(p,'.p-'+p.id)).join('\n');
+const lib=document.getElementById('lib');const cats=[...new Set(P.map(p=>p.c))];
+function run(p,st){st.innerHTML=p.html;st.className='stage p-'+p.id+' '+p.id;if(p.js){try{(new Function(p.js))()}catch(e){}}}
+const stages={};
+cats.forEach(c=>{const h=document.createElement('h2');h.textContent=c;h.style.fontSize='17px';lib.appendChild(h);const g=document.createElement('div');g.className='grid';lib.appendChild(g);
+ P.filter(p=>p.c===c).forEach(p=>{const d=document.createElement('div');d.className='pc';d.innerHTML=`<div class="stage"></div><div class="meta"><b>${p.id}</b><small>${p.desc}</small></div><div class="acts"><button data-a="r">Ulang</button><button data-a="c">CSS</button><button data-a="p">Prompt</button></div>`;
+  const st=d.querySelector('.stage');stages[p.id]=[p,st];run(p,st);
+  d.querySelector('[data-a=r]').onclick=()=>run(p,st);
+  d.querySelector('[data-a=c]').onclick=()=>copy(p.js&&!p.css?p.js:(outCss(p)+(p.js?'\n\n/* JS */\n'+p.js:'')));
+  d.querySelector('[data-a=p]').onclick=()=>copy(promptFor(p));
+  g.appendChild(d)})});
+document.getElementById('allCss').onclick=()=>copy(TOK+'\n\n'+P.map(outCss).join('\n\n'));
+document.getElementById('allPrompt').onclick=()=>copy(MASTER+'\n\nPRESETS:\n'+P.map(promptFor).join('\n'));
+document.getElementById('replayAll').onclick=()=>Object.values(stages).forEach(([p,s])=>run(p,s));
+</script>
+</body>
+</html>
