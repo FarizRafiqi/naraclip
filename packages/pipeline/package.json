@@ -1,0 +1,25 @@
+{
+  "name": "@naraclip/pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Idea -> storyboard -> video pipeline CLI for NaraClip",
+  "bin": {
+    "nc": "./src/cli.ts"
+  },
+  "scripts": {
+    "cli": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@naraclip/contracts": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "tsx": "^4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "sampleRate": 48000,
+  "channels": 1,
+  "format": "pcm_s16le",
+  "source": "claude-web-audio-pack",
+  "presets": [
+    {
+      "name": "whoosh",
+      "file": "whoosh.wav",
+      "durationMs": 490
+    },
+    {
+      "name": "whooshUp",
+      "file": "whooshUp.wav",
+      "durationMs": 640
+    },
+    {
+      "name": "whooshDown",
+      "file": "whooshDown.wav",
+      "durationMs": 640
+    },
+    {
+      "name": "swipe",
+      "file": "swipe.wav",
+      "durationMs": 240
+    },
+    {
+      "name": "slideIn",
+      "file": "slideIn.wav",
+      "durationMs": 390
+    },
+    {
+      "name": "riser",
+      "file": "riser.wav",
+      "durationMs": 1540
+    },
+    {
+      "name": "reverseSwell",
+      "file": "reverseSwell.wav",
+      "durationMs": 1240
+    },
+    {
+      "name": "sweepHigh",
+      "file": "sweepHigh.wav",
+      "durationMs": 540
+    },
+    {
+      "name": "pop",
+      "file": "pop.wav",
+      "durationMs": 140
+    },
+    {
+      "name": "click",
+      "file": "click.wav",
+      "durationMs": 50
+    },
+    {
+      "name": "tick",
+      "file": "tick.wav",
+      "durationMs": 40
+    },
+    {
+      "name": "tap",
+      "file": "tap.wav",
+      "durationMs": 100
+    },
+    {
+      "name": "toggleOn",
+      "file": "toggleOn.wav",
+      "durationMs": 190
+    },
+    {
+      "name": "toggleOff",
+      "file": "toggleOff.wav",
+      "durationMs": 190
+    },
+    {
+      "name": "bubble",
+      "file": "bubble.wav",
+      "durationMs": 170
+    },
+    {
+      "name": "hover",
+      "file": "hover.wav",
+      "durationMs": 70
+    },
+    {
+      "name": "select",
+      "file": "select.wav",
+      "durationMs": 140
+    },
+    {
+      "name": "swish",
+      "file": "swish.wav",
+      "durationMs": 160
+    },
+    {
+      "name": "hit",
+      "file": "hit.wav",
+      "durationMs": 370
+    },
+    {
+      "name": "softHit",
+      "file": "softHit.wav",
+      "durationMs": 320
+    },
+    {
+      "name": "boom",
+      "file": "boom.wav",
+      "durationMs": 1420
+    },
+    {
+      "name": "slam",
+      "file": "slam.wav",
+      "durationMs": 420
+    },
+    {
+      "name": "punch",
+      "file": "punch.wav",
+      "durationMs": 200
+    },
+    {
+      "name": "stamp",
+      "file": "stamp.wav",
+      "durationMs": 220
+    },
+    {
+      "name": "cymbal",
+      "file": "cymbal.wav",
+      "durationMs": 1540
+    },
+    {
+      "name": "ding",
+      "file": "ding.wav",
+      "durationMs": 920
+    },
+    {
+      "name": "bell",
+      "file": "bell.wav",
+      "durationMs": 2020
+    },
+    {
+      "name": "chime",
+      "file": "chime.wav",
+      "durationMs": 1200
+    },
+    {
+      "name": "success",
+      "file": "success.wav",
+      "durationMs": 510
+    },
+    {
+      "name": "error",
+      "file": "error.wav",
+      "durationMs": 470
+    },
+    {
+      "name": "warning",
+      "file": "warning.wav",
+      "durationMs": 340
+    },
+    {
+      "name": "notify",
+      "file": "notify.wav",
+      "durationMs": 440
+    },
+    {
+      "name": "coin",
+      "file": "coin.wav",
+      "durationMs": 490
+    },
+    {
+      "name": "levelUp",
+      "file": "levelUp.wav",
+      "durationMs": 440
+    },
+    {
+      "name": "okay",
+      "file": "okay.wav",
+      "durationMs": 120
+    },
+    {
+      "name": "typewriter",
+      "file": "typewriter.wav",
+      "durationMs": 802
+    },
+    {
+      "name": "keyClick",
+      "file": "keyClick.wav",
+      "durationMs": 60
+    },
+    {
+      "name": "counter",
+      "file": "counter.wav",
+      "durationMs": 590
+    },
+    {
+      "name": "blip",
+      "file": "blip.wav",
+      "durationMs": 80
+    },
+    {
+      "name": "dataStream",
+      "file": "dataStream.wav",
+      "durationMs": 655
+    },
+    {
+      "name": "barGrow",
+      "file": "barGrow.wav",
+      "durationMs": 420
+    },
+    {
+      "name": "glitch",
+      "file": "glitch.wav",
+      "durationMs": 310
+    },
+    {
+      "name": "laser",
+      "file": "laser.wav",
+      "durationMs": 270
+    },
+    {
+      "name": "zap",
+      "file": "zap.wav",
+      "durationMs": 240
+    },
+    {
+      "name": "powerUp",
+      "file": "powerUp.wav",
+      "durationMs": 620
+    },
+    {
+      "name": "powerDown",
+      "file": "powerDown.wav",
+      "durationMs": 720
+    },
+    {
+      "name": "scan",
+      "file": "scan.wav",
+      "durationMs": 1020
+    },
+    {
+      "name": "beep",
+      "file": "beep.wav",
+      "durationMs": 170
+    },
+    {
+      "name": "sonar",
+      "file": "sonar.wav",
+      "durationMs": 1220
+    },
+    {
+      "name": "alarm",
+      "file": "alarm.wav",
+      "durationMs": 880
+    },
+    {
+      "name": "shutter",
+      "file": "shutter.wav",
+      "durationMs": 150
+    },
+    {
+      "name": "sparkle",
+      "file": "sparkle.wav",
+      "durationMs": 570
+    },
+    {
+      "name": "drip",
+      "file": "drip.wav",
+      "durationMs": 270
+    },
+    {
+      "name": "heartbeat",
+      "file": "heartbeat.wav",
+      "durationMs": 400
+    },
+    {
+      "name": "shimmer",
+      "file": "shimmer.wav",
+      "durationMs": 940
+    },
+    {
+      "name": "wind",
+      "file": "wind.wav",
+      "durationMs": 1640
+    }
+  ]
+}
