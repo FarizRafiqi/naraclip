@@ -40,11 +40,11 @@ export function loadStorageConfig(): S3StorageConfig {
   }
 
   return {
-    endpoint: process.env.S3_ENDPOINT || env.S3_ENDPOINT || env.MINIO_ENDPOINT || 'http://192.168.1.7:8333',
-    region: process.env.S3_REGION || env.S3_REGION || 'us-east-1',
-    bucket: process.env.S3_BUCKET || env.S3_BUCKET || 'naraclip',
-    accessKey: process.env.S3_KEY || env.S3_KEY || env.MINIO_ACCESS_KEY || 'naraclip_admin',
-    secretKey: process.env.S3_SECRET || env.S3_SECRET || env.MINIO_SECRET_KEY || 'NaraclipSecretKey2026!',
+    endpoint: process.env.S3_ENDPOINT || env.S3_ENDPOINT || env.MINIO_ENDPOINT || '',
+    region: process.env.S3_REGION || env.S3_REGION || env.MINIO_REGION || 'us-east-1',
+    bucket: process.env.S3_BUCKET || env.S3_BUCKET || env.MINIO_BUCKET || 'naraclip',
+    accessKey: process.env.S3_KEY || env.S3_KEY || env.MINIO_ACCESS_KEY || '',
+    secretKey: process.env.S3_SECRET || env.S3_SECRET || env.MINIO_SECRET_KEY || '',
     driver: (process.env.STORAGE_DRIVER || env.STORAGE_DRIVER || 's3') as 's3' | 'local',
     localRoot: path.join(REPO_ROOT, 'storage', 'drive'),
   }
@@ -56,13 +56,21 @@ export class PipelineStorageClient {
 
   constructor(customConfig?: Partial<S3StorageConfig>) {
     this.config = { ...loadStorageConfig(), ...customConfig }
+
+    if (this.config.driver === 's3' && !this.config.endpoint) {
+      throw new Error('S3_ENDPOINT atau MINIO_ENDPOINT belum dikonfigurasi di file .env')
+    }
+
     this.client = new S3Client({
-      endpoint: this.config.endpoint,
+      endpoint: this.config.endpoint || undefined,
       region: this.config.region,
-      credentials: {
-        accessKeyId: this.config.accessKey!,
-        secretAccessKey: this.config.secretKey!,
-      },
+      credentials:
+        this.config.accessKey && this.config.secretKey
+          ? {
+              accessKeyId: this.config.accessKey,
+              secretAccessKey: this.config.secretKey,
+            }
+          : undefined,
       forcePathStyle: true,
     })
   }
