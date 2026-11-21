@@ -1,0 +1,139 @@
+{
+  "brief": {
+    "title": "Kenapa Redis Secepat Itu?",
+    "audience": "Programmer pemula sampai menengah",
+    "tone": "curious",
+    "targetDurationSec": 35,
+    "hook": "Kenapa Redis bisa menjawab dalam hitungan milidetik?",
+    "takeaway": "Redis cepat karena data utamanya ada di RAM; pakai sebagai cache, bukan satu-satunya penyimpanan.",
+    "claims": [
+      {
+        "id": "c1",
+        "text": "Redis menyimpan dataset di memori (in-memory).",
+        "sourceUrl": "https://redis.io/docs/latest/"
+      },
+      {
+        "id": "c2",
+        "text": "Data di memori bisa hilang jika tidak dipersistenkan, sehingga database utama tetap perlu.",
+        "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/"
+      }
+    ]
+  },
+  "script": {
+    "beats": [
+      {
+        "id": "b1",
+        "narration": "Kenapa Redis bisa menjawab dalam hitungan milidetik, padahal database biasa terasa lebih lambat?",
+        "claimIds": [],
+        "onScreenText": "KOK CEPAT?"
+      },
+      {
+        "id": "b2",
+        "narration": "Rahasianya sederhana. Redis menyimpan data di RAM, bukan di disk.",
+        "claimIds": ["c1"],
+        "onScreenText": null
+      },
+      {
+        "id": "b3",
+        "narration": "Disk harus mencari lokasi data lewat banyak lapisan. RAM bisa langsung dibaca dari alamatnya.",
+        "claimIds": [],
+        "onScreenText": null
+      },
+      {
+        "id": "b4",
+        "narration": "Makanya data yang sering dipakai, seperti sesi login, cocok ditaruh di Redis sebagai cache.",
+        "claimIds": [],
+        "onScreenText": null
+      },
+      {
+        "id": "b5",
+        "narration": "Tapi RAM terbatas dan bisa hilang saat mati, jadi data penting tetap simpan di database utama.",
+        "claimIds": ["c2"],
+        "onScreenText": null
+      }
+    ]
+  },
+  "storyboard": {
+    "shots": [
+      {
+        "id": "s1",
+        "beatId": "b1",
+        "recipe": "kinetic-title",
+        "headline": "Kenapa Redis secepat itu?",
+        "body": "Jawabannya ada di memori",
+        "code": null,
+        "terminal": null,
+        "svg": null,
+        "assetId": null,
+        "motion": "pop",
+        "sfx": "pop",
+        "emphasis": ["Redis"],
+        "weight": 1
+      },
+      {
+        "id": "s2",
+        "beatId": "b2",
+        "recipe": "custom-svg",
+        "headline": "RAM vs Disk",
+        "body": null,
+        "code": null,
+        "terminal": null,
+        "svg": "<svg viewBox=\"0 0 900 520\" xmlns=\"http://www.w3.org/2000/svg\"><rect data-anim=\"pop\" data-delay=\"0.1\" x=\"60\" y=\"140\" width=\"320\" height=\"220\" rx=\"24\" fill=\"#1e1b4b\" stroke=\"#818cf8\" stroke-width=\"5\"/><text data-anim=\"fade\" data-delay=\"0.4\" x=\"220\" y=\"270\" text-anchor=\"middle\" fill=\"#e0e7ff\" font-size=\"54\" font-weight=\"800\">RAM</text><rect data-anim=\"pop\" data-delay=\"0.6\" x=\"520\" y=\"140\" width=\"320\" height=\"220\" rx=\"24\" fill=\"#1e293b\" stroke=\"#64748b\" stroke-width=\"5\"/><text data-anim=\"fade\" data-delay=\"0.9\" x=\"680\" y=\"270\" text-anchor=\"middle\" fill=\"#cbd5e1\" font-size=\"54\" font-weight=\"800\">DISK</text><path data-anim=\"draw\" data-delay=\"1.2\" d=\"M380 250 H520\" stroke=\"#38bdf8\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\" stroke-dasharray=\"12 14\"/></svg>",
+        "assetId": null,
+        "motion": "pop",
+        "sfx": "whoosh",
+        "emphasis": [],
+        "weight": 1
+      },
+      {
+        "id": "s3",
+        "beatId": "b3",
+        "recipe": "stat-callout",
+        "headline": "RAM: langsung baca",
+        "body": "Disk: cari lewat banyak lapisan",
+        "code": null,
+        "terminal": null,
+        "svg": null,
+        "assetId": null,
+        "motion": "slide-up",
+        "sfx": "tick",
+        "emphasis": ["langsung"],
+        "weight": 1
+      },
+      {
+        "id": "s4",
+        "beatId": "b4",
+        "recipe": "code",
+        "headline": "Cache sesi login",
+        "body": null,
+        "code": "// simpan sesi di RAM selama 1 jam\nawait redis.set('sess:42', token, 'EX', 3600)\nconst sess = await redis.get('sess:42')",
+        "terminal": null,
+        "svg": null,
+        "assetId": null,
+        "motion": "slide-up",
+        "sfx": "none",
+        "emphasis": [],
+        "weight": 1
+      },
+      {
+        "id": "s5",
+        "beatId": "b5",
+        "recipe": "terminal",
+        "headline": "Tapi ingat",
+        "body": null,
+        "code": null,
+        "terminal": [
+          { "cmd": "redis-cli GET sess:42", "output": "\"token-abc\"" },
+          { "cmd": "# server mati / restart...", "output": null },
+          { "cmd": "redis-cli GET sess:42", "output": "(nil)  <- hilang tanpa persistence" }
+        ],
+        "svg": null,
+        "assetId": null,
+        "motion": "slide-up",
+        "sfx": "hit",
+        "emphasis": [],
+        "weight": 1
+      }
+    ]
+  }
+}
