@@ -63,11 +63,42 @@ export async function runPublish(slug: string): Promise<PublishPackage> {
 
   const brief = readJson<Brief>(p.brief)
   const timing = readJson<Timing>(p.timing)
+  const script = fs.existsSync(p.script) ? readJson<Script>(p.script) : null
+  const storyboard = fs.existsSync(p.storyboard) ? readJson<Storyboard>(p.storyboard) : null
 
-  const chapters = timing.beats.map((b, i) => ({
-    time: formatTimestamp(b.startMs),
-    title: `Bagian ${i + 1}: ${b.beatId}`,
-  }))
+  const chapters = timing.beats.map((b, i) => {
+    let title = ''
+
+    // 1. Cari dari storyboard headline
+    const matchingShot = storyboard?.shots?.find((s) => s.beatId === b.beatId && s.headline)
+    if (matchingShot?.headline) {
+      title = matchingShot.headline
+    }
+
+    // 2. Cari dari script onScreenText
+    if (!title) {
+      const matchingScriptBeat = script?.beats?.find((sb) => sb.id === b.beatId)
+      if (matchingScriptBeat?.onScreenText) {
+        title = matchingScriptBeat.onScreenText
+      }
+    }
+
+    // 3. Fallback ke ringkasan kata pertama dari timing
+    if (!title) {
+      const beatWords = timing.words
+        .filter((w) => w.startMs >= b.startMs && w.endMs <= b.endMs)
+        .map((w) => w.word)
+      if (beatWords.length > 0) {
+        const snippet = beatWords.slice(0, 5).join(' ').replace(/[.,!?]+$/, '')
+        title = snippet
+      }
+    }
+
+    return {
+      time: formatTimestamp(b.startMs),
+      title: title ? `${title}` : `Bagian ${i + 1}`,
+    }
+  })
 
   const hashtags = topicHashtags(slug, state.style)
 
