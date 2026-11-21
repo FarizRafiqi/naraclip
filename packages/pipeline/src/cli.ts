@@ -56,6 +56,18 @@ Perintah:
   nc social upload <slug> [--platform youtube] [--privacy public|unlisted|private]
       Unggah exports/final.mp4 + thumbnail + caption ke YouTube Shorts / sosmed.
 
+  nc storage inspect [slug]
+      Periksa daftar aset workspace, ukuran kompresi, dan URL file di SeaweedFS S3.
+
+  nc storage push <slug> [--channel channel-1|channel-2]
+      Kompres aset (WAV->FLAC, PNG->WebP), pangkas draft usang, dan unggah ke SeaweedFS S3.
+
+  nc storage push-all [--channel channel-1|channel-2]
+      Migrasi dan kompres seluruh workspace ke S3 VPS.
+
+  nc storage pull <slug> [--channel channel-1|channel-2]
+      Unduh aset workspace dari SeaweedFS S3 ke folder lokal.
+
 Pilihan Style:
   - dev-explainer (default Channel 2: 100% vector/code Remotion, Edge-TTS)
   - vinconium     (default Channel 1: photorealistic mixed-media GSAP HyperFrames, rekaman VO)
@@ -249,6 +261,85 @@ async function main() {
         console.log(`  Thumbnail custom: ${result.thumbnailUploaded ? '✓ terpasang' : result.thumbnailWarning || 'tidak'}`)
       } else {
         console.error(`Subcommand social tidak dikenal: ${sub}`)
+        printHelp()
+        process.exit(1)
+      }
+    } else if (cmd === 'storage') {
+      const {
+        pushWorkspaceAssets,
+        pullWorkspaceAssets,
+        listAllWorkspaces,
+        resolveWorkspace,
+      } = await import('./storage/sync.js')
+      const { PipelineStorageClient } = await import('./storage/client.js')
+
+      const sub = args[1] || 'inspect'
+      const chIdx = args.indexOf('--channel')
+      const channelOpt = chIdx !== -1 ? args[chIdx + 1] : undefined
+
+      if (sub === 'inspect') {
+        const slug = args[2]
+        const client = new PipelineStorageClient()
+        if (slug) {
+          const ws = resolveWorkspace(slug, channelOpt)
+          console.log(`\n=== Storage Status: ${ws.slug} (${ws.channel}) ===`)
+          console.log(`Endpoint: ${client.getDirectUrl('').replace(new RegExp(`/${client.bucket}/$`), '')}`)
+          console.log(`Bucket: ${client.bucket} (driver: ${client.driver})`)
+          const prefix = `${ws.channel}/${ws.slug}/`
+          const items = await client.list(prefix)
+          console.log(`File di S3 (${items.length} file):`)
+          for (const k of items.slice(0, 15)) {
+            console.log(`  - ${k}`)
+          }
+          if (items.length > 15) {
+            console.log(`  ...dan ${items.length - 15} file lainnya`)
+          }
+          console.log(`Direct Manifest: ${client.getDirectUrl(prefix + 'storage-manifest.json')}\n`)
+        } else {
+          console.log('\n=== Semua Workspace NaraClip ===')
+          for (const ws of listAllWorkspaces()) {
+            const prefix = `${ws.channel}/${ws.slug}/`
+            const items = await client.list(prefix)
+            const status = items.length > 0 ? `✓ ${items.length} file di S3` : '· Belum disinkron'
+            console.log(`  [${ws.channel.padEnd(9)}] ${ws.slug.padEnd(28)} -> ${status}`)
+          }
+          console.log('')
+        }
+      } else if (sub === 'push') {
+        const slug = args[2]
+        if (!slug || slug.startsWith('--')) {
+          console.error('Error: Masukkan slug. Contoh: nc storage push pedas-capsaicin')
+          process.exit(1)
+        }
+        console.log(`\n⏳ Mengompresi dan mengunggah aset "${slug}" ke S3...`)
+        const m = await pushWorkspaceAssets(slug, { channel: channelOpt })
+        console.log(`✓ Sinkronisasi berhasil!`)
+        console.log(`  Workspace: ${m.slug} (${m.channel})`)
+        console.log(`  Ukuran Asli: ${(m.totalOriginalBytes / 1024 / 1024).toFixed(2)} MB`)
+        console.log(`  Ukuran Kompresi: ${(m.totalCompressedBytes / 1024 / 1024).toFixed(2)} MB (${m.compressionPercent}% penghematan)`)
+        console.log(`  Total file terunggah: ${m.assets.length}`)
+        console.log(`  Manifest: ${m.endpoint}/${m.bucket}/${m.channel}/${m.slug}/storage-manifest.json\n`)
+      } else if (sub === 'push-all') {
+        const all = listAllWorkspaces()
+        const filtered = channelOpt ? all.filter((w) => w.channel === channelOpt) : all
+        console.log(`\n🚀 Mulai push massal untuk ${filtered.length} workspace...`)
+        for (const ws of filtered) {
+          console.log(`\n▶ [${ws.channel}] ${ws.slug}: memproses...`)
+          const m = await pushWorkspaceAssets(ws.slug, { channel: ws.channel })
+          console.log(`  ✓ Selesai: ${(m.totalOriginalBytes / 1024 / 1024).toFixed(1)}MB -> ${(m.totalCompressedBytes / 1024 / 1024).toFixed(1)}MB (${m.compressionPercent}% hemat, ${m.assets.length} aset)`)
+        }
+        console.log(`\n🎉 Push massal selesai!`)
+      } else if (sub === 'pull') {
+        const slug = args[2]
+        if (!slug || slug.startsWith('--')) {
+          console.error('Error: Masukkan slug. Contoh: nc storage pull pedas-capsaicin')
+          process.exit(1)
+        }
+        console.log(`\n⏳ Mengunduh aset "${slug}" dari S3...`)
+        const count = await pullWorkspaceAssets(slug, channelOpt)
+        console.log(`✓ Berhasil mengunduh ${count} aset ke workspace lokal.\n`)
+      } else {
+        console.error(`Subcommand storage tidak dikenal: ${sub}`)
         printHelp()
         process.exit(1)
       }
