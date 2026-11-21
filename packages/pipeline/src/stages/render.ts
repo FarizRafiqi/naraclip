@@ -299,7 +299,8 @@ export async function runRender(
         '--gl=angle-egl',
         '--hardware-acceleration=if-possible',
         '--enable-multiprocess-on-linux',
-        '--x264-preset=ultrafast',
+        '--x264-preset=veryfast',
+        '--crf=23',
         '--overwrite',
         ...publicArgs,
       ]

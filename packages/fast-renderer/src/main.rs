@@ -383,13 +383,36 @@ fn write_avi_stream_header(
             ff_args.push("1:a".to_string());
         }
         if with_nvenc {
-            ff_args.extend(["-c:v", "h264_nvenc", "-preset", "p3", "-cq", "20", "-g", "30"].map(String::from));
+            ff_args.extend([
+                "-c:v", "h264_nvenc",
+                "-preset", "p5",
+                "-profile:v", "high",
+                "-rc", "vbr",
+                "-cq", "28",
+                "-b:v", "0",
+                "-maxrate", "1100k",
+                "-bufsize", "2200k",
+                "-bf", "3",
+                "-b_ref_mode", "middle",
+                "-spatial-aq", "1",
+                "-temporal-aq", "1",
+                "-g", "60",
+            ].map(String::from));
         } else {
-            ff_args.extend(["-c:v", "libx264", "-preset", "ultrafast", "-crf", "20", "-g", "30"].map(String::from));
+            ff_args.extend([
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-tune", "animation",
+                "-profile:v", "high",
+                "-crf", "23",
+                "-maxrate", "1100k",
+                "-bufsize", "2200k",
+                "-g", "60",
+            ].map(String::from));
         }
         ff_args.extend(["-pix_fmt", "yuv420p"].map(String::from));
         if audio_path.is_some() {
-            ff_args.extend(["-c:a", "aac", "-b:a", "192k", "-shortest"].map(String::from));
+            ff_args.extend(["-c:a", "aac", "-b:a", "160k", "-shortest"].map(String::from));
         }
         ff_args.extend(["-movflags", "+faststart"].map(String::from));
         ff_args.push(out_file.to_string_lossy().to_string());
