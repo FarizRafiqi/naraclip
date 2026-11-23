@@ -41,10 +41,6 @@ COPY . .
 # Build AdonisJS & Inertia/Vite client bundles
 RUN node ace build
 
-# Install production dependencies inside build/ output directory
-WORKDIR /app/build
-RUN pnpm install --prod --frozen-lockfile --config.confirmModulesPurge=false
-
 # --- Stage 4: Production Runner ---
 FROM base AS runner
 
@@ -54,7 +50,12 @@ ENV HOST=0.0.0.0
 
 WORKDIR /app
 
-# Copy built application & production dependencies from builder
+# Copy dependencies and workspace packages from dependencies stage
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies /app/packages ./packages
+COPY package.json ./
+
+# Copy built application & entrypoint
 COPY --from=builder /app/build ./
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
