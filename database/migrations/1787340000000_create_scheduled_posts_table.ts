@@ -6,7 +6,7 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.bigIncrements('id').notNullable()
-      table.uuid('user_id').nullable().references('id').inTable('users').onDelete('CASCADE')
+      table.integer('user_id').unsigned().nullable().references('id').inTable('users').onDelete('CASCADE')
       table
         .integer('social_account_id')
         .unsigned()

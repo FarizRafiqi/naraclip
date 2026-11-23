@@ -13,7 +13,7 @@ export default class ScheduledPost extends BaseModel {
   declare id: number
 
   @column()
-  declare userId: string | null
+  declare userId: number | null
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>

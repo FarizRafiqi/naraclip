@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.uuid('user_id').nullable().references('id').inTable('users').onDelete('CASCADE')
+      table.integer('user_id').unsigned().nullable().references('id').inTable('users').onDelete('CASCADE')
       table.index(['user_id', 'platform', 'enabled'], 'social_accounts_user_platform_idx')
     })
   }
