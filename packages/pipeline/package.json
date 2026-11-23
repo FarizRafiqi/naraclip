@@ -8,7 +8,7 @@
     "nc": "./src/cli.ts"
   },
   "scripts": {
-    "cli": "tsx src/cli.ts",
+    "cli": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" tsx src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

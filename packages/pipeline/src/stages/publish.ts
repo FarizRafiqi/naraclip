@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import type { Brief, Timing } from '@naraclip/contracts'
+import type { Brief, Script, Storyboard, Timing } from '@naraclip/contracts'
 import { generateThumbnails } from '../thumbnail.js'
 import {
   loadState,

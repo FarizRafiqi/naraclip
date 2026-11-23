@@ -7,6 +7,7 @@ import {
   readSocialTokens,
   uploadYoutubeShort,
 } from './youtube.js'
+import { getStoredInstagramToken, uploadInstagramReel } from './instagram.js'
 
 export type SocialPlatformId = 'youtube' | 'tiktok' | 'instagram' | 'facebook' | 'x'
 
@@ -67,10 +68,11 @@ export function listSocialProviders(): SocialProviderStatus[] {
       platform: 'instagram',
       label: 'Instagram Reels (Meta Graph API)',
       oauthConfigured: Boolean(getEnvOrDotEnv('INSTAGRAM_CLIENT_ID') && getEnvOrDotEnv('INSTAGRAM_CLIENT_SECRET')),
-      connected: Boolean(tokens.instagram?.accessToken),
-      accountName: tokens.instagram?.accountName,
-      uploadSupported: false,
-      notes: 'Konfigurasi INSTAGRAM_CLIENT_ID & INSTAGRAM_CLIENT_SECRET di .env',
+      connected: Boolean(getStoredInstagramToken()?.accessToken),
+      accountName: getStoredInstagramToken()?.accountName,
+      accountHandle: getStoredInstagramToken()?.accountHandle ? `@${getStoredInstagramToken()?.accountHandle}` : undefined,
+      uploadSupported: true,
+      notes: 'Meta Graph API Reels resumable upload',
     },
     {
       platform: 'facebook',
@@ -142,9 +144,26 @@ export async function publishVideoToSocial(input: SocialUploadInput): Promise<So
     }
   }
 
+  if (platform === 'instagram') {
+    const rawCaption = `${title}\n\n${description}\n\n${tags.join(' ')}`.trim()
+    const res = await uploadInstagramReel({
+      videoPath,
+      caption: rawCaption,
+    })
+    return {
+      platform: 'instagram',
+      videoId: res.mediaId,
+      url: res.permalink,
+      title,
+      thumbnailUploaded: false,
+      raw: res.raw,
+    }
+  }
+
   throw new Error(
     `Upload otomatis untuk platform "${platform}" memerlukan OAuth & kredensial API platform tersebut terlebih dahulu di .env (/social/${platform}/redirect).`
   )
 }
 
 export * from './youtube.js'
+export * from './instagram.js'
