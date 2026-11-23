@@ -13,6 +13,7 @@ export const appUrl = env.get('APP_URL')
  * The configuration settings used by the HTTP server
  */
 export const http = defineConfig({
+  trustProxy: true,
   /**
    * Generate a unique request id for each incoming request.
    * Useful to correlate logs and debug a request flow.

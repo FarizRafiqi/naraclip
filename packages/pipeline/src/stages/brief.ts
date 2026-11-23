@@ -8,7 +8,6 @@ import {
 } from '@naraclip/contracts'
 import { generateStructured } from '../llm.js'
 import {
-  fileHash,
   loadState,
   paths,
   readJson,

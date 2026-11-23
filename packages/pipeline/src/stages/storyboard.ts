@@ -19,7 +19,7 @@ import {
   writeJson,
 } from '../workspace.js'
 
-export function defaultMockStoryboard(brief: Brief, script: Script): Storyboard {
+export function defaultMockStoryboard(brief: Brief, _script: Script): Storyboard {
   if (brief.style === 'dev-explainer') {
     return {
       schemaVersion: 1,

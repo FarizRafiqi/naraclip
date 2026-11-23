@@ -4,7 +4,6 @@ import {
   isSafeSvg,
   QAReportSchema,
   validateTiming,
-  type Brief,
   type QAFinding,
   type QAReport,
   type Storyboard,
@@ -33,7 +32,6 @@ export async function runQa(
     throw new Error(`brief, storyboard, atau timing belum ada untuk "${slug}".`)
   }
 
-  const brief = readJson<Brief>(p.brief)
   const storyboard = readJson<Storyboard>(p.storyboard)
   const timing = readJson<Timing>(p.timing)
 

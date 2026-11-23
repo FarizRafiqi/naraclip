@@ -67,7 +67,7 @@ export default class S3Storage {
     const accessKeyId = options.accessKey ?? env.get('S3_KEY') ?? env.get('MINIO_ACCESS_KEY')
     const secretAccessKey =
       options.secretKey ??
-      env.get('S3_SECRET') ??
+      env.get('S3_SECRET')?.release() ??
       env.get('MINIO_SECRET_KEY')?.release()
 
     this.client =

@@ -1,4 +1,6 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import User from '#models/user'
 import { DateTime } from 'luxon'
 
 export type SocialPlatform = 'youtube' | 'tiktok' | 'instagram' | 'facebook' | 'x'
@@ -8,6 +10,12 @@ export default class SocialAccount extends BaseModel {
 
   @column({ isPrimary: true })
   declare id: number
+
+  @column()
+  declare userId: string | null
+
+  @belongsTo(() => User)
+  declare user: BelongsTo<typeof User>
 
   @column()
   declare platform: SocialPlatform

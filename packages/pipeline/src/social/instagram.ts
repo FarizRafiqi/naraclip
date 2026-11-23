@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { getSocialTokenStorePath, readSocialTokens } from './youtube.js'
+import { readSocialTokens } from './youtube.js'
 
 export type StoredInstagramToken = {
   platform: 'instagram'
@@ -149,7 +149,7 @@ export async function uploadInstagramReel(
       offset: '0',
       'Content-Type': 'application/octet-stream',
     },
-    body: videoBytes as unknown as BodyInit,
+    body: videoBytes as any,
   })
 
   const uploadResult: any = await uploadRes.json()

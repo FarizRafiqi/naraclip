@@ -49,6 +49,8 @@ WORKDIR /app
 
 # Copy built application & production dependencies from builder
 COPY --from=builder /app/build ./
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Create data directories with appropriate permissions for node user
 RUN mkdir -p /app/tmp && chown -R node:node /app
@@ -59,4 +61,4 @@ EXPOSE 3333
 
 # Use dumb-init to properly handle PID 1 signal forwarding (graceful shutdown)
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "bin/server.js"]
+CMD ["/app/docker-entrypoint.sh"]

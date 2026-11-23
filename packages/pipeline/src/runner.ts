@@ -1,10 +1,8 @@
 import {
-  GATE_IDS,
   STAGE_IDS,
   STYLE_PROFILES,
   type GateId,
   type PipelineState,
-  type PipelineStyle,
   type StageId,
 } from '@naraclip/contracts'
 import { runAssets } from './stages/assets.js'
@@ -16,7 +14,7 @@ import { runRender } from './stages/render.js'
 import { runScript } from './stages/script.js'
 import { runStoryboard } from './stages/storyboard.js'
 import { runVoice } from './stages/voice.js'
-import { initState, loadState, saveState, setStage } from './workspace.js'
+import { loadState, saveState, setStage } from './workspace.js'
 
 export type RunOptions = {
   to?: StageId

@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./social/instagram": "./src/social/instagram.ts",
+    "./social/youtube": "./src/social/youtube.ts"
+  },
   "description": "Idea -> storyboard -> video pipeline CLI for NaraClip",
   "bin": {
     "nc": "./src/cli.ts"

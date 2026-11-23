@@ -52,7 +52,7 @@ export default class MinioStorage extends S3Storage {
     const endpoint = env.get('S3_ENDPOINT') ?? env.get('MINIO_ENDPOINT')
     const accessKeyId = env.get('S3_KEY') ?? env.get('MINIO_ACCESS_KEY')
     const secretAccessKey =
-      env.get('S3_SECRET') ?? env.get('MINIO_SECRET_KEY')?.release()
+      env.get('S3_SECRET')?.release() ?? env.get('MINIO_SECRET_KEY')?.release()
     const region = env.get('S3_REGION') ?? env.get('MINIO_REGION', 'us-east-1')
 
     this.rawClient =
@@ -121,6 +121,7 @@ export default class MinioStorage extends S3Storage {
       contentType: input.contentType,
       byteSize: input.byteSize,
       checksumSha256: input.checksumSha256,
+      driver: 's3',
     }
   }
 
