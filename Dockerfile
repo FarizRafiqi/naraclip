@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV CI=true
 RUN corepack enable
 
 WORKDIR /app
@@ -42,7 +43,7 @@ RUN node ace build
 
 # Install production dependencies inside build/ output directory
 WORKDIR /app/build
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile --config.confirmModulesPurge=false
 
 # --- Stage 4: Production Runner ---
 FROM base AS runner
